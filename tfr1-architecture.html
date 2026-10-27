@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The TfR1 Pipeline</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    /* Document skeleton: matches what the Artifact host injects, so the local
+       file renders identically to the published page. */
+    :root {
+      color-scheme: light;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    body { margin: 0; font: 14px system-ui, -apple-system, sans-serif; }
+    img { max-width: 100%; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+
+<style>
+/* Same design system as the primer and the plans: teal = pH 7.4 / safe / cheap,
+   amber = pH 6.0 / risky / expensive. Single ~68ch column, sticky index.
+   Each stage carries a recurring "biology behind it" panel — the spine of this doc. */
+:root {
+  --bg:        #f4f6f7;
+  --surface:   #ffffff;
+  --surface-2: #eceff1;
+  --fg:        #14181d;
+  --fg-muted:  #58636e;
+  --fg-faint:  #8a949e;
+  --rule:      #d9dee3;
+  --rule-soft: #e7ebee;
+
+  --neutral:   #0b766c;
+  --neutral-w: #dbeeeb;
+  --acid:      #b4460d;
+  --acid-w:    #fae7d9;
+  --accent:    var(--neutral);
+
+  --font-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Spectral', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --measure: 68ch;
+  --gutter-l: max(20px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(20px, env(safe-area-inset-right, 0px));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1216; --surface: #161b20; --surface-2: #1d242a;
+    --fg: #e4e8eb; --fg-muted: #96a1ab; --fg-faint: #6b757f;
+    --rule: #2a323a; --rule-soft: #212830;
+    --neutral: #34d0bd; --neutral-w: #11322f;
+    --acid: #f59354; --acid-w: #3a2113;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1216; --surface: #161b20; --surface-2: #1d242a;
+  --fg: #e4e8eb; --fg-muted: #96a1ab; --fg-faint: #6b757f;
+  --rule: #2a323a; --rule-soft: #212830;
+  --neutral: #34d0bd; --neutral-w: #11322f;
+  --acid: #f59354; --acid-w: #3a2113;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.65;
+  margin: 0; -webkit-font-smoothing: antialiased;
+}
+
+.shell {
+  display: grid; grid-template-columns: 1fr; gap: 0;
+  max-width: 1180px; margin: 0 auto;
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r);
+}
+@media (min-width: 1000px) { .shell { grid-template-columns: 220px minmax(0, 1fr); gap: 56px; } }
+
+.index { display: none; }
+@media (min-width: 1000px) {
+  .index {
+    display: block; position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 28px);
+    align-self: start; max-height: calc(100vh - 80px); overflow-y: auto;
+    padding-block: 28px; font-family: var(--font-display);
+    font-size: 12.5px; line-height: 1.45;
+  }
+}
+.index-label {
+  font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--fg-faint); font-weight: 600; margin-bottom: 14px;
+}
+.index ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.index a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 6px;
+  color: var(--fg-muted); text-decoration: none;
+  padding: 5px 8px 5px 0; border-left: 2px solid transparent; padding-left: 10px;
+  transition: color .15s, border-color .15s;
+}
+.index a:hover { color: var(--fg); }
+.index a .n { color: var(--fg-faint); font-variant-numeric: tabular-nums; }
+.index a.on { color: var(--fg); border-left-color: var(--accent); font-weight: 600; }
+.index a.on .n { color: var(--accent); }
+
+.masthead { padding-block: 56px 36px; border-bottom: 1px solid var(--rule); max-width: var(--measure); }
+.eyebrow {
+  font-family: var(--font-display); font-size: 11px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px;
+}
+h1 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(34px, 6.5vw, 54px); line-height: 1.03;
+  letter-spacing: -.022em; margin: 0 0 20px; text-wrap: balance;
+}
+.standfirst { font-size: 20px; line-height: 1.55; color: var(--fg-muted); margin: 0; }
+.meta {
+  margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px 22px;
+  font-family: var(--font-display); font-size: 12px; color: var(--fg-faint);
+}
+.meta b { color: var(--fg-muted); font-weight: 600; }
+
+main { padding-bottom: 100px; }
+section { max-width: var(--measure); padding-block: 48px 8px; scroll-margin-top: 24px; }
+section + section { border-top: 1px solid var(--rule-soft); }
+
+.sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+.sec-num {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  color: var(--accent); letter-spacing: .04em; padding-top: 6px;
+}
+h2 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(25px, 4vw, 33px); line-height: 1.15;
+  letter-spacing: -.016em; margin: 0; text-wrap: balance;
+}
+h3 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 18px; line-height: 1.3; letter-spacing: -.005em; margin: 38px 0 2px;
+}
+p { margin: 16px 0; }
+a { color: var(--accent); }
+strong { font-weight: 600; }
+em { font-style: italic; }
+code, .mono { font-family: var(--font-mono); font-size: .86em; }
+code { background: var(--surface-2); padding: 1px 5px; border-radius: 3px; color: var(--fg); }
+ul, ol { margin: 16px 0; padding-left: 22px; }
+li { margin: 7px 0; padding-left: 3px; }
+li::marker { color: var(--fg-faint); }
+
+.key {
+  margin: 30px 0; padding: 20px 24px;
+  background: var(--surface); border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0; font-size: 18px; line-height: 1.55;
+}
+.key p { margin: 0; }
+.key p + p { margin-top: 12px; }
+.key.acid { border-left-color: var(--acid); }
+
+/* ---------- the recurring biology panel ---------- */
+.bio {
+  margin: 28px 0; padding: 18px 22px;
+  background: var(--neutral-w); border-radius: 8px;
+  font-size: 16px; line-height: 1.6;
+}
+.bio .tag {
+  display: block; font-family: var(--font-display); font-size: 10.5px;
+  font-weight: 700; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--neutral); margin-bottom: 9px;
+}
+.bio p { margin: 0; }
+.bio p + p { margin-top: 11px; }
+.bio strong { color: var(--fg); }
+
+.cs {
+  margin: 26px 0; padding: 16px 20px;
+  background: var(--surface-2); border-radius: 6px;
+  font-size: 15.5px; line-height: 1.55; color: var(--fg-muted);
+}
+.cs p { margin: 0; }
+.cs p + p { margin-top: 10px; }
+.cs .tag {
+  display: block; font-family: var(--font-display); font-size: 10.5px;
+  font-weight: 600; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--fg-faint); margin-bottom: 7px;
+}
+
+.tw { overflow-x: auto; margin: 26px 0; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 420px; }
+th {
+  font-family: var(--font-display); font-size: 11px; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--fg-faint);
+  text-align: left; padding: 0 16px 9px 0; border-bottom: 1px solid var(--rule); white-space: nowrap;
+}
+td { padding: 11px 16px 11px 0; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+td:last-child, th:last-child { padding-right: 0; }
+tbody tr:last-child td { border-bottom: none; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.hl td { background: var(--neutral-w); }
+tr.hl td:first-child { font-weight: 600; }
+tr.warn td { background: var(--acid-w); }
+td.pick { font-weight: 600; color: var(--neutral); }
+td.drop { color: var(--fg-faint); }
+
+figure { margin: 34px 0; }
+figure svg { display: block; width: 100%; max-width: 100%; height: auto; }
+.figbox { background: var(--surface); border: 1px solid var(--rule-soft); border-radius: 8px; padding: 22px 20px; }
+figcaption {
+  margin-top: 13px; font-size: 14px; line-height: 1.5; color: var(--fg-muted);
+  font-family: var(--font-display); font-weight: 500;
+}
+figcaption b { color: var(--fg); font-weight: 600; }
+.svg-fg { fill: var(--fg); }
+.svg-muted { fill: var(--fg-muted); }
+.svg-faint { fill: var(--fg-faint); }
+text { font-family: var(--font-display); }
+.lbl { font-size: 12px; font-weight: 500; }
+.lbl-s { font-size: 10.5px; font-weight: 500; }
+.lbl-b { font-size: 12px; font-weight: 700; }
+.lbl-mono { font-family: var(--font-mono); font-size: 11px; }
+
+/* ---------- stage banner ---------- */
+.banner {
+  display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center;
+  margin: 22px 0 6px;
+}
+.pill {
+  padding: 3px 10px; border-radius: 4px;
+  font-family: var(--font-display); font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+}
+.pill.gpu { background: var(--acid-w); color: var(--acid); }
+.pill.cpu { background: var(--neutral-w); color: var(--neutral); }
+.pill.nim { background: var(--neutral); color: var(--surface); }
+.pill.tool { background: var(--surface-2); color: var(--fg-muted); }
+.pill.pri { background: var(--neutral); color: var(--surface); }
+.pill.wild { background: var(--acid); color: var(--surface); }
+.pill.base { background: var(--surface-2); color: var(--fg-faint); }
+
+/* ---------- route block ---------- */
+h4 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 15px; line-height: 1.35; letter-spacing: 0;
+  color: var(--fg-muted); margin: 28px 0 0;
+}
+.route {
+  margin: 30px 0; border: 1px solid var(--rule); border-radius: 8px;
+  background: var(--surface); overflow: hidden;
+}
+.route.pri { border-color: var(--neutral); border-width: 2px; }
+.route.wild { border-color: var(--acid); }
+.route-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
+  padding: 14px 20px; border-bottom: 1px solid var(--rule-soft);
+}
+.route-head .nm { font-family: var(--font-display); font-weight: 700; font-size: 16.5px; }
+.route-head .src { font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-faint); }
+.route-body { padding: 4px 20px 18px; }
+.route-body > :first-child { margin-top: 14px; }
+
+/* ---------- done-when ---------- */
+.done {
+  margin: 30px 0 10px; padding: 18px 22px;
+  border: 1px dashed var(--rule); border-radius: 8px; background: var(--surface);
+}
+.done .tag {
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--accent);
+  display: block; margin-bottom: 9px;
+}
+.done ul { margin: 0; padding-left: 20px; font-size: 15.5px; }
+.done li { margin: 5px 0; }
+.done.warn { border-color: var(--acid); }
+.done.warn .tag { color: var(--acid); }
+
+footer {
+  max-width: var(--measure); padding-block: 40px 70px;
+  border-top: 1px solid var(--rule); font-size: 14.5px; color: var(--fg-muted);
+}
+footer p { margin: 10px 0; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="shell">
+
+<nav class="index" aria-label="Sections">
+  <div class="index-label">Contents</div>
+  <ol id="toc"></ol>
+</nav>
+
+<div>
+
+<header class="masthead">
+  <div class="eyebrow">Working document · Read this first</div>
+  <h1>The TfR1 Pipeline</h1>
+  <p class="standfirst">Six stages that turn a protein structure file into twenty submitted designs. Each one explains what to run, and why the biology leaves us no other sensible choice. Nothing here assumes you have read the other documents, or that you know any biology.</p>
+  <div class="meta">
+    <span><b>Written</b> &nbsp;Sun 25 October 2026</span>
+    <span><b>Deadline</b> &nbsp;Sun 1 November 2026</span>
+    <span><b>Background</b> &nbsp;The TfR1 Problem, for the biology in full</span>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ 00 ============ -->
+<section id="s0">
+  <div class="sec-head"><span class="sec-num">00</span><h2>What we are making</h2></div>
+
+  <p>We are designing a small protein that grabs hold of a receptor on the surface of brain blood vessels, rides it into the cell, and then lets go because the inside is slightly more acidic than the outside.</p>
+
+  <p>Here is why anyone would want that. The brain is walled off from the bloodstream by vessels whose lining cells are welded together with no gaps between them, and almost nothing crosses. A typical therapeutic antibody reaches around a third of one per cent of its blood concentration in brain tissue. We have drugs that would treat Alzheimer's, Parkinson's and a family of inherited metabolic diseases, if only they could get in.</p>
+
+  <p>The way through is to use a door that already exists. A receptor called <strong>TfR1</strong> sits on those lining cells, where its day job is pulling iron into the cell. It grabs its cargo outside, the cell swallows it, and it releases inside. Attach a drug to something that binds TfR1 and the receptor will carry the whole package across for you. Several drugs on the market already work this way.</p>
+
+  <p>The competition asks for a binder that satisfies three requirements at once.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>#</th><th>Requirement</th><th>Why it is there</th></tr></thead>
+    <tbody>
+      <tr><td class="num">①</td><td>Bind human TfR1 at pH 7.4, with K<sub>D</sub> under 1 µM</td><td>pH 7.4 is blood. This is the basic job.</td></tr>
+      <tr><td class="num">②</td><td>Also bind mouse TfR1 at pH 7.4</td><td>Drugs are tested in mice before humans. A human-only binder cannot be tested at all.</td></tr>
+      <tr class="hl"><td class="num">③</td><td>Release human TfR1 at pH 6.0</td><td>pH 6.0 means we are inside the cell. Letting go there is what frees the cargo to continue into the brain instead of being carried back out.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Two pieces of vocabulary you will need throughout, and then we can start.</p>
+
+  <p><strong>K<sub>D</sub></strong> measures how tightly two proteins stick. It is a concentration: how much of one protein has to be floating around before half the copies of the other have caught hold of it. Counter-intuitively, <strong>lower means tighter</strong>. A nanomolar binder is strong, a micromolar binder is weak, and our floor of 1 µM is a modest bar to clear.</p>
+
+  <p><strong>pH</strong> measures how many free protons are drifting in solution, on a scale where lower means more acidic. Blood sits at 7.4. The inside of the bubble a cell swallows things into sits at about 6.0. That difference is small, it is the entire basis of requirement ③, and section 05 explains how a protein can be built to notice it.</p>
+</section>
+
+<!-- ============ 01 ============ -->
+<section id="s1">
+  <div class="sec-head"><span class="sec-num">01</span><h2>The pipeline at a glance</h2></div>
+
+  <p>Six stages. Three of them generate and filter candidates, one installs the pH switch by hand, one chooses what to submit, and the first one costs nothing and determines whether any of the rest is aimed at the right thing.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 430" role="img" aria-label="Six pipeline stages running top to bottom, each paired with the biological fact that makes it necessary, from target preparation through generation, filtering, cross-species gating, histidine grafting and portfolio selection">
+        <defs>
+          <marker id="p1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <text class="lbl-s svg-faint" x="14" y="16" letter-spacing="1.2">STAGE</text>
+        <text class="lbl-s svg-faint" x="214" y="16" letter-spacing="1.2">BECAUSE OF THE BIOLOGY</text>
+
+        <!-- 1 -->
+        <rect x="14" y="28" width="178" height="48" rx="6" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.6"/>
+        <text class="lbl-b" x="28" y="48" fill="var(--neutral)">1 · Target prep</text>
+        <text class="lbl-s" x="28" y="65" fill="var(--neutral)">laptop · free</text>
+        <text class="lbl-s svg-muted" x="214" y="48">TfR1 has one patch we may bind and one</text>
+        <text class="lbl-s svg-muted" x="214" y="62">we must not. Cut away everything else.</text>
+        <line x1="103" y1="78" x2="103" y2="92" stroke="currentColor" stroke-width="1.3" marker-end="url(#p1)"/>
+
+        <!-- 2 -->
+        <rect x="14" y="94" width="178" height="48" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+        <text class="lbl-b svg-fg" x="28" y="114">2 · Generation</text>
+        <text class="lbl-s svg-muted" x="28" y="131">BioNeMo · hosted</text>
+        <text class="lbl-s svg-muted" x="214" y="114">Proteins bind by surfaces that fit. Make</text>
+        <text class="lbl-s svg-muted" x="214" y="128">thousands of shapes and see which fit.</text>
+        <line x1="103" y1="144" x2="103" y2="158" stroke="currentColor" stroke-width="1.3" marker-end="url(#p1)"/>
+
+        <!-- 3 -->
+        <rect x="14" y="160" width="178" height="48" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+        <text class="lbl-b svg-fg" x="28" y="180">3 · Affinity filter</text>
+        <text class="lbl-s svg-muted" x="28" y="197">ipSAE · hosted</text>
+        <text class="lbl-s svg-muted" x="214" y="180">Requirement ① sets a floor of 1 µM.</text>
+        <text class="lbl-s svg-muted" x="214" y="194">Drop whatever cannot reach it.</text>
+        <line x1="103" y1="210" x2="103" y2="224" stroke="currentColor" stroke-width="1.3" marker-end="url(#p1)"/>
+
+        <!-- 4 -->
+        <rect x="14" y="226" width="178" height="48" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+        <text class="lbl-b svg-fg" x="28" y="246">4 · Cross-species gate</text>
+        <text class="lbl-s svg-muted" x="28" y="263">Boltz-2 · hosted</text>
+        <text class="lbl-s svg-muted" x="214" y="246">Human and mouse share only 3 of 9 key</text>
+        <text class="lbl-s svg-muted" x="214" y="260">positions. Keep what grips those three.</text>
+        <line x1="103" y1="276" x2="103" y2="290" stroke="currentColor" stroke-width="1.3" marker-end="url(#p1)"/>
+
+        <!-- 5 -->
+        <rect x="14" y="292" width="178" height="54" rx="6" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="2.2"/>
+        <text class="lbl-b" x="28" y="312" fill="var(--acid)">5 · Histidine graft</text>
+        <text class="lbl-s" x="28" y="329" fill="var(--acid)">by hand · + ArcRefine</text>
+        <text class="lbl-s" x="214" y="306" fill="var(--acid)" font-weight="700">Histidine is the only residue that changes</text>
+        <text class="lbl-s" x="214" y="320" fill="var(--acid)" font-weight="700">charge between pH 7.4 and 6.0. It is the</text>
+        <text class="lbl-s" x="214" y="334" fill="var(--acid)" font-weight="700">only switch chemistry offers us.</text>
+        <line x1="103" y1="348" x2="103" y2="362" stroke="currentColor" stroke-width="1.3" marker-end="url(#p1)"/>
+
+        <!-- 6 -->
+        <rect x="14" y="364" width="178" height="48" rx="6" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.6"/>
+        <text class="lbl-b" x="28" y="384" fill="var(--neutral)">6 · Choose twenty</text>
+        <text class="lbl-s" x="28" y="401" fill="var(--neutral)">laptop · judgement</text>
+        <text class="lbl-s svg-muted" x="214" y="384">No tool can score requirement ③, so we</text>
+        <text class="lbl-s svg-muted" x="214" y="398">spread the bet instead of ranking it.</text>
+      </svg>
+    </div>
+    <figcaption><b>Every stage exists because of a specific biological fact.</b> Stage 5 is set apart because it is the only one where our own reasoning beats the tools, and the only one whose success cannot be measured before the wet lab reports.</figcaption>
+  </figure>
+
+  <div class="key">
+    <p>The one sentence that explains the shape of all of it: <strong>generate a large pool of binders that ignore pH entirely, then install the pH switch afterwards as a separate step.</strong> No model in the <em>generative</em> stack represents pH, so requirement ③ cannot come out of stage 2 and has to be added somewhere we control. Physics-based tools can estimate it once a structure exists, which is what stage 5 is built around.</p>
+  </div>
+</section>
+
+<!-- ============ 02 ============ -->
+<section id="s2">
+  <div class="sec-head"><span class="sec-num">02</span><h2>Stage 1 — Prepare the target</h2></div>
+
+  <div class="banner">
+    <span class="pill cpu">Laptop</span><span class="pill tool">PyMOL</span><span class="pill tool">PDB 1CX8</span><span class="pill tool">UniProt Q62351</span>
+  </div>
+
+  <p>Download the experimentally determined structure of human TfR1 from the Protein Data Bank, entry <code>1CX8</code>, and then throw most of it away.</p>
+
+  <div class="bio">
+    <span class="tag">The biology behind it</span>
+    <p>TfR1 is two identical copies of the same protein locked together, anchored in the cell membrane. The part sticking out into the bloodstream folds into three distinct chunks, and only one of them is ours to touch.</p>
+    <p>The <strong>helical</strong> chunk sits at the bottom near the membrane, where it both holds the two copies together and provides the site where transferrin — the courier protein that carries iron through the blood — docks. Residues 619 to 670 form that site. <strong>Block it and iron delivery stops throughout the body, which causes anaemia.</strong></p>
+    <p>The <strong>apical</strong> chunk sits at the top, pointing away from the cell, with no known natural partner and nothing above it. It is accessible, it is unoccupied, and it is as far from the iron site as it is possible to get. Several viruses independently evolved to enter human cells through it, and the brain-delivery drugs that reached the clinic bind there too.</p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 620 258" role="img" aria-label="TfR1 anchored in the membrane with apical domains at the top as our target and the helical domains at the bottom carrying the transferrin site we must avoid">
+        <defs>
+          <marker id="t1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <line x1="310" y1="12" x2="310" y2="38" stroke="var(--neutral)" stroke-width="1.8" marker-end="url(#t1)" color="var(--neutral)"/>
+        <text class="lbl-s" x="322" y="24" fill="var(--neutral)" font-weight="700">we bind here</text>
+
+        <rect x="0" y="206" width="620" height="8" fill="currentColor" opacity=".85"/>
+        <text class="lbl-s svg-faint" x="610" y="232" text-anchor="end">cell membrane</text>
+
+        <rect x="286" y="186" width="8" height="20" fill="currentColor"/>
+        <rect x="326" y="186" width="8" height="20" fill="currentColor"/>
+
+        <!-- helical, meeting -->
+        <rect x="200" y="146" width="110" height="42" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+        <rect x="310" y="146" width="110" height="42" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+        <text class="lbl-s svg-muted" x="255" y="171" text-anchor="middle">HELICAL</text>
+        <text class="lbl-s svg-muted" x="365" y="171" text-anchor="middle">HELICAL</text>
+        <line x1="310" y1="146" x2="310" y2="188" stroke="var(--acid)" stroke-width="2.2"/>
+
+        <!-- protease-like -->
+        <rect x="178" y="98" width="100" height="40" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+        <rect x="342" y="98" width="100" height="40" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+        <text class="lbl-s svg-muted" x="228" y="122" text-anchor="middle">PROTEASE-LIKE</text>
+        <text class="lbl-s svg-muted" x="392" y="122" text-anchor="middle">PROTEASE-LIKE</text>
+
+        <!-- apical -->
+        <rect x="168" y="42" width="104" height="48" rx="7" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2.6"/>
+        <rect x="348" y="42" width="104" height="48" rx="7" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2.6"/>
+        <text class="lbl-b" x="220" y="64" text-anchor="middle" fill="var(--neutral)">APICAL</text>
+        <text class="lbl-s" x="220" y="80" text-anchor="middle" fill="var(--neutral)">res ~189–383</text>
+        <text class="lbl-b" x="400" y="64" text-anchor="middle" fill="var(--neutral)">APICAL</text>
+        <text class="lbl-s" x="400" y="80" text-anchor="middle" fill="var(--neutral)">res ~189–383</text>
+
+        <line x1="420" y1="167" x2="470" y2="167" stroke="var(--acid)" stroke-width="1.4"/>
+        <text class="lbl" x="478" y="163" fill="var(--acid)" font-weight="700">Transferrin site</text>
+        <text class="lbl-s svg-muted" x="478" y="179">res 619–670 · never touch</text>
+
+        <text class="lbl-s svg-faint" x="310" y="252" text-anchor="middle">we keep only one apical domain and delete everything else before generation</text>
+      </svg>
+    </div>
+    <figcaption><b>Truncation is a cost decision and a safety decision at once.</b> AlphaFold's runtime grows sharply with system size, and a site that is absent from the file cannot be bound by accident.</figcaption>
+  </figure>
+
+  <h3>What to do</h3>
+
+  <ol>
+    <li><strong>Cut to the apical domain</strong>, roughly residues 189 to 383. Confirm the boundaries by eye in PyMOL rather than trusting the numbers, because a cut through the middle of a helix leaves a frayed, unphysical edge that the generator will happily design a binder against.</li>
+    <li><strong>Keep one chain.</strong> TfR1 is a dimer, but one apical domain is the whole design surface. The second copy doubles the cost of every prediction downstream and buys nothing.</li>
+    <li><strong>Strip every heteroatom</strong> — waters, sugars, ions. Leftover sugar chains are a classic way to silently poison a run, because the generator will design against them and they will not be there in the real experiment.</li>
+    <li><strong>Get the mouse sequence.</strong> Mouse TfR1 is <code>Q62351</code> in UniProt. Align it to human, take the span matching the apical domain you just carved out, and save it as FASTA. No experimental mouse structure is needed, because mouse is only used for filtering and the structure predictor builds its own model from sequence.</li>
+    <li><strong>Write down the three conserved positions.</strong> These become the hotspot residues handed to the generator in stage 2.</li>
+  </ol>
+
+  <div class="done">
+    <span class="tag">Done when</span>
+    <ul>
+      <li>A single-chain PDB of roughly 195 residues, opened and visually inspected, with no heteroatoms left in it.</li>
+      <li>A mouse apical sequence in FASTA, aligned and span-matched to the human one.</li>
+      <li>Three hotspot residue numbers written down, in whatever format the generator expects.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 03 ============ -->
+<section id="s3">
+  <div class="sec-head"><span class="sec-num">03</span><h2>Stage 2 — Generate candidates</h2></div>
+
+  <div class="banner">
+    <span class="pill nim">Hosted</span><span class="pill tool">BioNeMo toolkit</span><span class="pill tool">RFdiffusion</span><span class="pill tool">ProteinMPNN</span><span class="pill tool">Boltz-2</span>
+  </div>
+
+  <p>Run NVIDIA's <code>protein-binder-design</code> workflow against the apical domain file, with the three hotspots specified. It chains three models: one invents a backbone shape aimed at the hotspots, one chooses an amino acid sequence that will fold into that shape, and one predicts the resulting complex so it can be scored.</p>
+
+  <div class="bio">
+    <span class="tag">The biology behind it</span>
+    <p>Proteins do their jobs by physically touching other molecules with surfaces that fit. There is no signal, no message, no action at a distance — two proteins stick together when their shapes are complementary and the chemistry across the contact surface is favourable. Designing a binder means designing a surface that matches a particular patch.</p>
+    <p>Nothing holds them together but many individually feeble attractions spread across that surface: slight charges pulling at one another, greasy patches huddling away from water, atoms sharing a hydrogen. Any one is negligible. A hundred of them across a well-matched surface is a firm grip.</p>
+  </div>
+
+  <h3>The one parameter worth arguing about</h3>
+
+  <p>Set the binder length to roughly <strong>65 to 90 residues</strong> rather than accepting the default, and understand why, because this choice is made for the sake of stage 5 rather than stage 2.</p>
+
+  <div class="key acid">
+    <p>A large binder buries a lot of surface and spreads its binding energy thinly across hundreds of small contacts. An interface built that way is strong, and it <em>cannot be broken by one protonated histidine</em>, because no single disruption reaches enough of those contacts to matter.</p>
+    <p>A short binder is forced to concentrate its grip into fewer contacts, which is exactly the single-point-of-failure property that requirement ③ depends on. We are deliberately trading a little stickiness for a breakable interface, because stickiness we can measure and the switch we cannot.</p>
+  </div>
+
+  <div class="done">
+    <span class="tag">Done when</span>
+    <ul>
+      <li>Thousands of candidate binders, each with a predicted structure of it sitting on the target.</li>
+      <li>Spot-checked that designs are landing on the apical patch and nowhere near residues 619–670.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 04 ============ -->
+<section id="s4">
+  <div class="sec-head"><span class="sec-num">04</span><h2>Stages 3 and 4 — The two filters</h2></div>
+
+  <div class="banner">
+    <span class="pill nim">Hosted</span><span class="pill tool">ipSAE</span><span class="pill tool">Boltz-2</span>
+  </div>
+
+  <p>Two cuts, applied cheapest first so that we never pay to evaluate a hopeless design twice.</p>
+
+  <h3>Filter one — affinity, scored with ipSAE</h3>
+
+  <p>The default confidence score for a predicted complex is <strong>ipTM</strong>, and it fails us in a specific way here. It is computed across the whole system, so with a 195-residue target and a 75-residue binder, most of the number reflects how well the model understands the target — something we already knew and do not care about. The interface we actually designed barely moves it.</p>
+
+  <p><strong>ipSAE</strong> rescores the same output focusing on contacts between the two chains. It separates designs far better, and the BioNeMo workflow already ranks on it, so this costs nothing to adopt.</p>
+
+  <div class="bio">
+    <span class="tag">The biology behind it</span>
+    <p>Requirement ① sets a floor of K<sub>D</sub> under 1 µM, and among designs that pass everything else, the tightest binder wins. So this filter is about clearing a bar and then ranking, not about finding the single best design. Expect to keep roughly the top sixty per cent.</p>
+  </div>
+
+  <h3>Filter two — the cross-species gate</h3>
+
+  <p>Re-predict every survivor against the <em>mouse</em> apical sequence instead of the human one, and keep only designs the model is confident about in both species.</p>
+
+  <div class="bio">
+    <span class="tag">The biology behind it</span>
+    <p>Of the nine key positions on the apical patch, <strong>human and mouse TfR1 have only three in common</strong>. The two surfaces genuinely do not look alike, which is also why certain human-infecting viruses cannot infect mice at all.</p>
+    <p>A binder that works in both species therefore has to take most of its grip from those three shared positions while tolerating the six that differ, either by avoiding them or by contacting them in a way that works with either residue. This is a real constraint on where on the patch we are allowed to bind, and it is why the plan generates far more designs than it needs.</p>
+  </div>
+
+  <div class="done warn">
+    <span class="tag">Expect heavy attrition</span>
+    <ul>
+      <li>This stage removes <strong>half to three quarters</strong> of the pool. That is not a failure of the stage; it is the reason we over-generate.</li>
+      <li>A pool of 20 entering this gate leaves nothing to work with. A pool of several hundred leaves 50 to 100, which is what stage 5 needs.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 05 ============ -->
+<section id="s5">
+  <div class="sec-head"><span class="sec-num">05</span><h2>Stage 5 — Install the pH switch</h2></div>
+
+  <div class="banner">
+    <span class="pill gpu">Laptop + GPU</span><span class="pill tool">FoldX</span><span class="pill tool">PROPKA3</span><span class="pill tool">Boltz-2</span><span class="pill tool">ArcRefine</span>
+  </div>
+
+  <p>This is the stage the competition is won or lost in, it runs almost entirely on the laptop, and it is the only place where our own reasoning beats the tools.</p>
+
+  <div class="bio">
+    <span class="tag">The biology behind it — read this part twice</span>
+    <p>Moving from pH 7.4 to pH 6.0 means roughly 25 times more free protons in solution. Almost nothing in a protein notices. Every amino acid side chain that can hold a proton is in exactly the same state at both conditions, because their tipping points all sit far outside that window.</p>
+    <p>Except one. <strong>Histidine's tipping point sits at about pH 6.5, right between our two conditions.</strong> At pH 7.4 roughly 11 per cent of histidine copies carry a positive charge; at pH 6.0, roughly 76 per cent do. It is the only residue in the entire alphabet that flips.</p>
+    <p>And here is why that matters. Water molecules cluster around charges and stabilise them, so <strong>burying a charge where no water can reach it is energetically expensive.</strong> A histidine sitting in the middle of a contact surface is tolerable while neutral, and becomes very costly the moment it turns positive. The surface comes apart on its own.</p>
+    <p>That is the whole mechanism. A histidine in the right place is a protein that can tell whether it is inside a cell, because the acidity tells it, and that responds by letting go.</p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 200" role="img" aria-label="At pH 7.4 a neutral histidine sits in the interface and the binder holds on, while at pH 6.0 the same histidine gains a positive charge, repels a nearby positive residue and the binder releases">
+        <!-- left: pH 7.4 -->
+        <rect x="14" y="26" width="290" height="150" rx="8" fill="var(--neutral-w)"/>
+        <text class="lbl-b" x="30" y="48" fill="var(--neutral)">pH 7.4 · outside the cell</text>
+
+        <path d="M34 72 L132 72 C132 92, 112 88, 112 110 C112 132, 132 128, 132 148 L34 148 Z"
+              fill="var(--surface)" stroke="currentColor" stroke-width="1.6"/>
+        <text class="lbl-s svg-muted" x="48" y="114">TfR1</text>
+        <path d="M284 72 L146 72 C146 92, 166 88, 166 110 C166 132, 146 128, 146 148 L284 148 Z"
+              fill="var(--surface)" stroke="var(--neutral)" stroke-width="2"/>
+        <text class="lbl-s" x="268" y="114" text-anchor="end" fill="var(--neutral)">binder</text>
+        <circle cx="139" cy="110" r="11" fill="var(--surface)" stroke="var(--neutral)" stroke-width="1.8"/>
+        <text class="lbl-b" x="139" y="114" text-anchor="middle" fill="var(--neutral)">H</text>
+        <text class="lbl-s" x="159" y="168" text-anchor="middle" fill="var(--neutral)" font-weight="700">neutral — holds on</text>
+
+        <!-- right: pH 6.0 -->
+        <rect x="336" y="26" width="290" height="150" rx="8" fill="var(--acid-w)"/>
+        <text class="lbl-b" x="352" y="48" fill="var(--acid)">pH 6.0 · inside the endosome</text>
+
+        <path d="M356 72 L454 72 C454 92, 434 88, 434 110 C434 132, 454 128, 454 148 L356 148 Z"
+              fill="var(--surface)" stroke="currentColor" stroke-width="1.6"/>
+        <text class="lbl-s svg-muted" x="370" y="114">TfR1</text>
+        <circle cx="444" cy="92" r="9" fill="var(--surface)" stroke="var(--acid)" stroke-width="1.6"/>
+        <text class="lbl-s" x="444" y="96" text-anchor="middle" fill="var(--acid)" font-weight="700">+</text>
+        <text class="lbl-s svg-faint" x="414" y="70" text-anchor="middle">Arg</text>
+
+        <path d="M620 72 L500 72 C500 92, 520 88, 520 110 C520 132, 500 128, 500 148 L620 148 Z"
+              fill="var(--surface)" stroke="var(--acid)" stroke-width="2"/>
+        <text class="lbl-s" x="606" y="114" text-anchor="end" fill="var(--acid)">binder</text>
+        <circle cx="493" cy="110" r="11" fill="var(--surface)" stroke="var(--acid)" stroke-width="2"/>
+        <text class="lbl-b" x="493" y="114" text-anchor="middle" fill="var(--acid)">H⁺</text>
+
+        <path d="M476 134 L458 134" stroke="var(--acid)" stroke-width="2" stroke-linecap="round"/>
+        <path d="M464 129 L458 134 L464 139" fill="none" stroke="var(--acid)" stroke-width="2" stroke-linecap="round"/>
+        <path d="M510 134 L528 134" stroke="var(--acid)" stroke-width="2" stroke-linecap="round"/>
+        <path d="M522 129 L528 134 L522 139" fill="none" stroke="var(--acid)" stroke-width="2" stroke-linecap="round"/>
+        <text class="lbl-s" x="493" y="168" text-anchor="middle" fill="var(--acid)" font-weight="700">charged — pushes apart</text>
+      </svg>
+    </div>
+    <figcaption><b>The switch in one picture.</b> A histidine next to an arginine is the strongest placement available, because arginine stays positive at both pH values — so protonation does not merely delete a favourable contact, it creates an actively repulsive one.</figcaption>
+  </figure>
+
+  <h3>Three routes, in priority order</h3>
+
+  <p>Until recently we assumed this stage had to be done entirely by hand, on the grounds that nothing in the toolchain represents pH. That is true of the generative stack — RFdiffusion, AlphaFold, ProteinMPNN and Boltz all see a histidine as just another residue type — but it is <strong>not true of physics-based tools</strong>. Rosetta has always been able to protonate a histidine explicitly, repack the structure, and report an energy in each state. Two published projects wrap exactly that capability for exactly our problem.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Route</th><th>What it is</th><th>Standing</th></tr></thead>
+    <tbody>
+      <tr><td><b>A · By hand</b></td><td>Rank positions by burial and adjacency, mutate, re-fold, repair breakages</td><td class="drop">Baseline. Always available, zero install risk, and what happens if nothing else lands.</td></tr>
+      <tr class="hl"><td><b>B · Baker <code>his_ph_interface</code></b></td><td>Published pipeline that places histidines <em>and scores the pH sensitivity directly</em></td><td class="pick">Priority. Do this if at all possible.</td></tr>
+      <tr class="warn"><td><b>C · Proton-PottsMPNN</b></td><td>Inverse-folding model with protonation states built into its alphabet</td><td>Wild card. Only with spare hands; never on the critical path.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="key">
+    <p>Routes B and C are not alternatives to the pipeline. They are alternatives to <em>this stage only</em>, and both take the same input stage 4 already produces: a binder-on-target complex with the binder as chain A and the target as chain B. That clean boundary is what makes them safe to attempt in parallel.</p>
+  </div>
+
+  <h3>Route A — the hand-rolled baseline</h3>
+
+  <div class="banner">
+    <span class="pill base">Baseline</span><span class="pill cpu">Laptop</span><span class="pill tool">FoldX</span><span class="pill tool">PROPKA3</span><span class="pill tool">ArcRefine</span>
+  </div>
+
+  <p>Described in full because it is the fallback, and because understanding it is how you will judge whether route B's automated choices are sensible.</p>
+
+  <h4>Choosing where the histidine goes</h4>
+
+  <p>You already have what you need, which is a predicted structure of each binder sitting on the target. Work down this filter:</p>
+
+  <ol>
+    <li><strong>Find the interface.</strong> List every binder residue with an atom within about 5 Å of any target atom. For a 75-residue binder that is typically 15 to 25 residues.</li>
+    <li><strong>Keep only the buried ones.</strong> Compute solvent-accessible surface area for each, bound against free. A residue at the rim of the patch is still touching the target but remains half in solvent, and a charge there costs almost nothing because water can still surround it.</li>
+    <li><strong>Flag the ones beside a positive charge.</strong> Of those, find any sitting within roughly 5 to 6 Å of an arginine or lysine on either side of the interface. Both stay positive at both pH values, so these are the prize positions.</li>
+  </ol>
+
+  <div class="key">
+    <p><strong>Position beats count.</strong> One histidine in the core beside an arginine is a switch. Three at the rim are three wasted mutations. Rank candidate positions by what they sit next to, never by how many you can fit.</p>
+  </div>
+
+  <h4>Making the mutation</h4>
+
+  <p>At the sequence level a graft is trivial: the binder has a tyrosine at position 34, you change that letter to H. Everything interesting is in choosing the letter and handling the consequences. Two routes, used for different jobs:</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Route</th><th>What it does</th><th>Used for</th></tr></thead>
+    <tbody>
+      <tr><td><b>In-place mutation</b><br><span style="color:var(--fg-faint);font-size:13px">FoldX BuildModel</span></td><td>Deletes the old side chain, attaches a histidine to the same backbone, repacks the immediate neighbours. Seconds.</td><td>Producing structures to score. Convenient that FoldX both makes the mutant and scores it.</td></tr>
+      <tr class="hl"><td><b>Full re-fold</b><br><span style="color:var(--fg-faint);font-size:13px">Boltz-2</span></td><td>Changes the letter in the sequence and predicts the whole complex from scratch. Slow.</td><td>The actual pass/fail gate. Asks whether the complex still forms at all.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Why it breaks, and what to do about it</h4>
+
+  <p>Breakage is the expected outcome, not the unlucky one, because we are deliberately damaging a structure the generator worked to optimise. Two reasons, both about packing. The residue being replaced was wedged against neighbours arranged around its specific geometry, and histidine is a flat ring on a short arm — swap out a bulky leucine and you leave a cavity, swap out a small alanine and the ring clashes. Separately, histidine is considerably more polar than the greasy residues that usually fill an interface core, so it costs desolvation energy even while neutral.</p>
+
+  <p>A variant has broken if the re-fold shows a sharp drop in interface confidence, a shifted pose measured against the parent, or the binder sitting somewhere other than the apical patch. That last case is dead regardless; the first two go to repair.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 240" role="img" aria-label="The stage five loop: graft a histidine, re-fold, keep it if the interface survived, otherwise repair with ArcRefine holding the histidine pinned and re-fold again, discarding after two failed passes">
+        <defs>
+          <marker id="l1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <rect x="12" y="40" width="112" height="50" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+        <text class="lbl-b svg-fg" x="68" y="62" text-anchor="middle">Surviving</text>
+        <text class="lbl-s svg-muted" x="68" y="78" text-anchor="middle">design</text>
+        <line x1="128" y1="65" x2="152" y2="65" stroke="currentColor" stroke-width="1.5" marker-end="url(#l1)"/>
+
+        <rect x="158" y="40" width="124" height="50" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+        <text class="lbl-b svg-fg" x="220" y="62" text-anchor="middle">Graft histidine</text>
+        <text class="lbl-s svg-muted" x="220" y="78" text-anchor="middle">at the ranked position</text>
+        <line x1="286" y1="65" x2="310" y2="65" stroke="currentColor" stroke-width="1.5" marker-end="url(#l1)"/>
+
+        <rect x="316" y="40" width="104" height="50" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+        <text class="lbl-b svg-fg" x="368" y="62" text-anchor="middle">Re-fold</text>
+        <text class="lbl-s svg-muted" x="368" y="78" text-anchor="middle">Boltz-2</text>
+        <line x1="424" y1="65" x2="448" y2="65" stroke="currentColor" stroke-width="1.5" marker-end="url(#l1)"/>
+
+        <text class="lbl-s svg-faint" x="486" y="32" text-anchor="middle">intact?</text>
+        <rect x="454" y="40" width="66" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text class="lbl-b svg-fg" x="487" y="70" text-anchor="middle">check</text>
+
+        <line x1="524" y1="65" x2="548" y2="65" stroke="var(--neutral)" stroke-width="1.8" marker-end="url(#l1)" color="var(--neutral)"/>
+        <text class="lbl-s" x="536" y="56" text-anchor="middle" fill="var(--neutral)" font-weight="700">yes</text>
+        <rect x="554" y="40" width="72" height="50" rx="6" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2"/>
+        <text class="lbl-s" x="590" y="62" text-anchor="middle" fill="var(--neutral)" font-weight="700">Keep</text>
+        <text class="lbl-s" x="590" y="78" text-anchor="middle" fill="var(--neutral)">for stage 6</text>
+
+        <path d="M487 94 L487 130 L330 130" fill="none" stroke="var(--acid)" stroke-width="1.8" marker-end="url(#l1)" color="var(--acid)"/>
+        <text class="lbl-s" x="500" y="114" fill="var(--acid)" font-weight="700">no</text>
+
+        <rect x="180" y="144" width="150" height="56" rx="6" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="2"/>
+        <text class="lbl-b" x="255" y="165" text-anchor="middle" fill="var(--acid)">ArcRefine</text>
+        <text class="lbl-s" x="255" y="181" text-anchor="middle" fill="var(--acid)">pin the histidine,</text>
+        <text class="lbl-s" x="255" y="194" text-anchor="middle" fill="var(--acid)">rebuild around it</text>
+        <path d="M255 142 L255 130" fill="none" stroke="var(--acid)" stroke-width="1.8"/>
+        <path d="M180 172 L116 172 L116 106 L368 106 L368 94" fill="none" stroke="var(--acid)" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#l1)" color="var(--acid)"/>
+        <text class="lbl-s" x="120" y="222" fill="var(--acid)" font-weight="700">max two passes, then discard</text>
+      </svg>
+    </div>
+    <figcaption><b>ArcRefine turns a discard into a repair.</b> It carries the parent's binding pose forward and re-optimises the surrounding residues with the histidine held fixed, which re-solves the packing problem rather than undoing the graft.</figcaption>
+  </figure>
+
+  <div class="key acid">
+    <p><strong>The histidine must be pinned, and this is not optional.</strong> ArcRefine optimises for binding, and a histidine in an interface core is a poor residue for binding — that is precisely why grafting one breaks things. Left unconstrained, the cheapest way for a sequence optimiser to repair the interface is to mutate the histidine back into something that packs well, and it will report a much improved binder that no longer does the one thing we needed.</p>
+    <p>Check first whether ArcRefine supports fixed positions. If it does not, abandon it rather than working around it.</p>
+  </div>
+
+  <p>A related and subtler caution: refinement that genuinely improves affinity pushes a design toward the heavily buried interfaces that one charge cannot break, undoing the argument for short binders in stage 2. Treat refinement as repair rather than improvement, run the fewest passes that restore a foldable interface, and treat a repaired variant that comes back markedly tighter than its parent as a warning sign rather than a success.</p>
+
+  <h4>Scoring, and what the scores are worth</h4>
+
+  <p>Two free CPU tools rank the survivors. <strong>PROPKA3</strong> predicts the tipping point of each ionisable residue from a structure, and the useful quantity is the shift between the bound complex and the free binder: a histidine whose tipping point is pushed down by burial is a loaded spring, wanting a proton and unable to have one while bound. <strong>FoldX</strong> reports binding energy at a specified pH, so take the difference between its answers at 7.4 and 6.0 and rank by that gap.</p>
+
+  <p>Be honest about what these numbers are. Neither tool was built for designed interfaces and published accuracy on them is poor. Use them to rank-order candidates that are already structurally sound, and never to rescue a design that failed an earlier stage.</p>
+
+  <div class="done warn">
+    <span class="tag">What route A cannot tell you</span>
+    <ul>
+      <li>A variant that <strong>breaks while neutral</strong> — measurable, the re-fold shows it.</li>
+      <li>A variant that is <strong>tolerated while neutral and fatal when charged</strong> — this is what we want, and route A cannot see it.</li>
+      <li>A variant that is <strong>tolerated while neutral and harmless when charged</strong> — a wasted mutation, and route A cannot see this either.</li>
+    </ul>
+  </div>
+
+  <p>Those last two look identical to every model in route A, because none of them represent charge state. What separates them is geometric reasoning done by hand: is this histidine buried deeply enough that a charge cannot be solvated, and is there a positive charge close enough to push against it? <strong>Closing that gap is the entire reason route B exists.</strong></p>
+
+  <h3>Route B — the Baker pH interface pipeline</h3>
+
+  <div class="banner">
+    <span class="pill pri">Priority</span><span class="pill cpu">CPU</span><span class="pill tool">PyRosetta</span><span class="pill tool">ProteinMPNN</span><span class="pill tool">AF2 / Boltz-2</span>
+  </div>
+
+  <div class="route pri">
+    <div class="route-head">
+      <span class="nm">baker-laboratory / ph_binder_paper</span>
+      <span class="src">MIT · published, wet-lab validated</span>
+    </div>
+    <div class="route-body">
+      <p>A pipeline from the group that built most of the tools we already use, written for precisely this problem: turning an existing binder into a pH-dependent one by placing histidines. It supersedes route A rather than supplementing it.</p>
+
+      <p>The repository holds two separate pipelines and <strong>we want the second one.</strong> The <em>exploder</em> pipeline destabilises the binder's own fold at low pH so the whole protein comes apart, which would work but is not our mechanism. The <em>interface</em> pipeline places histidines so they hydrogen-bond the target at high pH and lose that bond while gaining charge at low pH. That is requirement ③ restated in their vocabulary.</p>
+
+      <h4>Three steps</h4>
+      <ol>
+        <li><code>his_ph_interface_design.py</code> finds binder positions that could take a histidine accepting a hydrogen bond from the target, scores each by whether the partner is backbone or side chain and whether the position is core or surface, then draws weighted sets of positions, places histidines, redesigns the rest of the binder with ProteinMPNN, and assigns each set a pH score.</li>
+        <li>Run the designs through an oracle — AF2, or Boltz-2 in our case — and drop anything whose interface moved.</li>
+        <li><code>his_ph_interface_hbonds.py</code> re-scores the predicted structures by protonating and deprotonating every histidine, repacking each state, and reporting what changed.</li>
+      </ol>
+
+      <h4>The column that matters</h4>
+      <p>Step 3 reports <code>ddg_soft_lowph_vs_high</code>, and <strong>a positive value means binding is weaker at low pH</strong>. That is a direct numeric readout of the thing route A has to guess at. It also gives <code>ph_score</code>, counts of cross-interface histidine hydrogen bonds at each pH, and net charge in both states.</p>
+
+      <p>There is also <code>his_ph_interface_distances.py</code>, a standalone screen reporting each binder histidine's closest approach to arginine, lysine, aspartate and glutamate on the target. That is route A's position-ranking step, already written.</p>
+
+      <div class="cs">
+        <span class="tag">It independently confirms our placement logic</span>
+        <p>Their README notes that the original hypothesis was histidine pairs hydrogen-bonding each other, and that it was later found the <strong>positive-to-positive charge effect is probably the stronger force</strong> — which is exactly the reasoning route A uses when ranking positions by proximity to an arginine or lysine. They arrived at it by running the experiments.</p>
+      </div>
+
+      <h4>What it costs</h4>
+      <p>PyRosetta is the real obstacle. It is not on pip, it needs a licence (free for non-commercial use), and it wants Python 3.12 alongside npose, numba and scipy. ProteinMPNN arrives as a git submodule, so clone with <code>--recursive</code>. The scripts are also slow, running multiple rounds of ProteinMPNN sampling and Rosetta repacking per input.</p>
+
+      <p>The input format is exactly what stage 4 hands us — the complex with binder as chain A and target as chain B — and the binder does not need to contain any histidine beforehand.</p>
+    </div>
+  </div>
+
+  <h3>Route C — Proton-PottsMPNN</h3>
+
+  <div class="banner">
+    <span class="pill wild">Wild card</span><span class="pill gpu">GPU</span><span class="pill tool">uv · Python 3.12</span><span class="pill tool">HBPLUS</span><span class="pill tool">RF3 or Boltz-2</span>
+  </div>
+
+  <div class="route wild">
+    <div class="route-head">
+      <span class="nm">christian-creator / ProtonPottsMPNN</span>
+      <span class="src">MIT · 2026 preprint, research code</span>
+    </div>
+    <div class="route-body">
+      <p>The most elegant of the three and the least certain. It extends PottsMPNN, an inverse-folding model that learns a Potts energy function, by adding <strong>protonation states as first-class tokens in the amino acid alphabet</strong>. Histidine becomes either <code>HIS-P</code> when charged or <code>HIS-S</code> when neutral, and acids get their own pair. Because one energy function can then score alternative protonation assignments on a fixed backbone, the design engine can pin a protonated centre and redesign its neighbourhood so that binding switches with pH.</p>
+
+      <p>Put differently, pH-awareness lives <em>inside</em> the model rather than being bolted on afterwards. If it works it beats route B, and that is the only reason it stays on the list.</p>
+
+      <h4>How it would be used</h4>
+      <p>The engine places protonated centres and runs block descent over the neighbourhood, optimising a weighted blend of overall stability against a selectivity gap — the energy difference between protonated and deprotonated states. Sweeping that weight from pure stability to pure selectivity produces a Pareto front to pick designs off. Every design is written out with its protonation states attached alongside its plain sequence.</p>
+
+      <h4>Why it is the wild card and not the priority</h4>
+      <ul>
+        <li>The folding step uses RF3, whose weights are roughly 3 GB and <strong>do not ship with the repository</strong>. You would need a separate checkpoint and a GPU, or take the manifest it exports and fold with Boltz-2 instead.</li>
+        <li>HBPLUS is an external C binary that cannot be pip-installed, needed by the labeller and the fold scoring though not by the design engine itself.</li>
+        <li>It is research code accompanying a 2026 preprint, and the README is candid that the RF3 path was exercised with an internal checkpoint.</li>
+        <li>Its protonation labeller reports average precision of 0.70 on histidine, which is usable, against 0.33 on acids, which is not. Histidine is the one we care about, but the gap is worth knowing.</li>
+        <li>It is a second heavy environment on top of PyRosetta, with a <code>uv</code> install pinned to Python 3.12.</li>
+      </ul>
+
+      <div class="done warn">
+        <span class="tag">Conditions for attempting it</span>
+        <ul>
+          <li>Only if someone other than the project owner has the time, and only once route B is standing.</li>
+          <li>Nothing in the submission plan may depend on it. If it produces something that is upside; if it produces nothing, nobody notices.</li>
+          <li>Realistically this is version-two material rather than something that lands inside eight days.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Which route runs, and who runs it</h3>
+
+  <p>Route A is yours and happens regardless, because it needs nothing installed and you already know how to do it. Route B is a well-bounded package someone else can build, with a defined input, a defined output, published documentation and no dependency on anything else in the pipeline. Route C only exists if there is a spare person who wants it.</p>
+
+  <p>The sequencing that matters is that <strong>stage 4 output does not exist until Wednesday</strong>. Anyone building route B should spend the first days installing PyRosetta and running the interface pipeline against any public binder-target complex, so the environment is proven before our designs arrive. Handing someone an install problem and a scientific problem at the same moment is how both of them slip.</p>
+</section>
+
+<!-- ============ 06 ============ -->
+<section id="s6">
+  <div class="sec-head"><span class="sec-num">06</span><h2>Stage 6 — Choose twenty</h2></div>
+
+  <div class="banner">
+    <span class="pill cpu">Laptop</span><span class="pill tool">Foldseek</span><span class="pill tool">PyMOL</span>
+  </div>
+
+  <p>Treat this as portfolio construction rather than taking the top twenty rows of a spreadsheet.</p>
+
+  <div class="bio">
+    <span class="tag">The biology behind it</span>
+    <p>Only twenty designs get synthesised and measured, with no second round. Requirement ③ can now be scored approximately — route B in stage 5 gives a real number for it — but approximately is not reliably, so a submission ranked purely on predicted affinity and a noisy pH score would fail uniformly and teach us nothing about why. A deliberate spread fails partially and tells us which direction to move.</p>
+    <p>Twenty near-copies of one design is one experiment. Twenty distinct designs is twenty.</p>
+  </div>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Slots</th><th>Design class</th><th>What it tests</th></tr></thead>
+    <tbody>
+      <tr><td class="num">6</td><td>Highest affinity, one well-placed histidine</td><td>The conservative bet — minimum perturbation to a strong interface.</td></tr>
+      <tr class="hl"><td class="num">8</td><td>Mid affinity, two histidines at distinct sites</td><td>The central hypothesis. Two shots at a switch without over-committing.</td></tr>
+      <tr><td class="num">4</td><td>Aggressive, three histidines</td><td>Covers the case where one protonation is simply not enough force.</td></tr>
+      <tr><td class="num">2</td><td>Unmodified parents, no histidine added</td><td>Internal control. Separates "the binder was bad" from "the histidine broke it".</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Those last two slots feel like wasted submissions and are not. Without them a uniformly negative result is uninterpretable, and an uninterpretable result is the one outcome worth actually fearing.</p>
+
+  <h3>Three checks before submitting</h3>
+
+  <ul>
+    <li><strong>Diversity.</strong> No pair above roughly 60 per cent sequence identity, and no two submissions using the same fold against the same patch.</li>
+    <li><strong>Novelty.</strong> Run Foldseek against the whole PDB. The rules require designs to be de novo rather than modified versions of existing binders, and we want that evidence collected calmly on Saturday rather than scrambled at the deadline.</li>
+    <li><strong>Eyes.</strong> Open all twenty in PyMOL. Twenty structures is twenty minutes and it catches what no metric reports — a binder threaded through a loop, an interface made entirely of backbone, a histidine pointing into solvent where it can do nothing.</li>
+  </ul>
+
+  <div class="done">
+    <span class="tag">Done when</span>
+    <ul>
+      <li>A CSV ranked by preference, with at least <code>name</code>, <code>sequence</code> and <code>molecule_class</code>.</li>
+      <li>Every sequence between 10 and 250 residues, with the C-terminal tag kept clear of the binding surface.</li>
+      <li>Foldseek output saved as evidence of de novo origin.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 07 ============ -->
+<section id="s7">
+  <div class="sec-head"><span class="sec-num">07</span><h2>Constraints and calendar</h2></div>
+
+  <p>One mid-range GPU, around two hundred dollars, evenings plus next Saturday, and twenty submission slots. The constraints did most of the design work above.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Day</th><th>You</th><th>The machine, overnight</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td><b>Sun 25</b><br><span style="color:var(--fg-faint);font-size:13px">today</span></td><td>Probe the BioNeMo workflow on NVIDIA's own example, twice: once for function, once for throughput. All of stage 1. Install BindCraft tonight as a fallback regardless.</td><td>First generation run</td></tr>
+      <tr><td><b>Mon 26</b></td><td>Inspect the pool. Confirm designs land on the apical patch and nowhere near 619–670.</td><td>Generation continues</td></tr>
+      <tr><td><b>Tue 27</b></td><td>Affinity filter. Read the ipSAE distribution rather than trusting the top of the list.</td><td>Cross-species gate</td></tr>
+      <tr><td><b>Wed 28</b></td><td>Survey survivors. Decide whether a second, aimed generation run is worth it.</td><td>Second run, if called</td></tr>
+      <tr><td><b>Thu 29</b></td><td>Lock the pool. Begin the histidine position ranking on paper.</td><td>Re-fold first variants</td></tr>
+      <tr class="hl"><td><b>Fri 30</b></td><td>Histidine scan, PROPKA and FoldX. ArcRefine, two hours, hard stop.</td><td>Re-fold variants and repairs</td></tr>
+      <tr><td><b>Sat 31</b></td><td>Portfolio selection, Foldseek, PyMOL inspection.</td><td>—</td></tr>
+      <tr><td><b>Sun 1</b></td><td>Assemble the CSV, write the methods note, submit.</td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>What will eat the week</h3>
+
+  <ul>
+    <li><strong>Environment setup.</strong> Versions of CUDA, drivers and model libraries disagreeing. Budget hard caps on every install and smoke-test on a tool's own bundled example before pointing it at TfR1.</li>
+    <li><strong>Bad target prep.</strong> Wrong chain, leftover sugars, a boundary slicing through a helix. It silently poisons everything downstream and costs ten minutes to prevent by opening the file and looking at it.</li>
+    <li><strong>Tool creep.</strong> The urge to add a fourth tool on Wednesday because a paper looked good. Resist this hardest; the plan is already at the edge of what the time supports.</li>
+    <li><strong>Idle GPU.</strong> An instance left running over a workday is about twenty dollars, which is ten per cent of the budget spent on nothing. Stop it whenever you close the laptop.</li>
+  </ul>
+
+  <div class="key acid">
+    <p>The honest caveat, stated plainly for anyone joining. <strong>The pH switch remains the least certain part of this project.</strong> Route B gives us a physics-based estimate rather than nothing, which is a real improvement over designing blind, but Rosetta's pH energies on designed interfaces are noisy and no part of this has been validated on our target. We are engineering requirements ① and ②, and making an informed bet on requirement ③ rather than a blind one.</p>
+    <p>That sets what counts as success. Twenty designs that bind both species tightly, carrying a deliberate and documented spread of histidine placements, is a good submission even if none of them switch — because it is the version of this experiment that produces an interpretable result either way.</p>
+  </div>
+</section>
+
+<footer>
+  <p><b>Where to start.</b> Stage 1 is free, needs no GPU, blocks everything else, and is the highest-leverage evening in the project. Download 1CX8, cut it to the apical domain, strip it, look at it in PyMOL, and align the mouse span. Do that first.</p>
+  <p><b>If you can help.</b> The useful background is not biology but pipeline engineering, GPU orchestration and careful evaluation design. If you can run batch jobs on rented GPUs, reason about overfitting to a scoring function, or build the bookkeeping that tracks thousands of candidates down to twenty, you can contribute from day one.</p>
+  <p>Residue ranges follow the structure literature and should be re-checked against 1CX8 itself. Tool capabilities are as described on their own pages and have not been independently verified. ArcRefine's reported results are n = 10 per arm from a single author. GPU pricing is indicative.</p>
+</footer>
+
+</main>
+</div>
+</div>
+
+<script>
+(function () {
+  const toc = document.getElementById('toc');
+  const secs = [...document.querySelectorAll('main section')];
+  const links = secs.map(s => {
+    const n = s.querySelector('.sec-num').textContent;
+    const h = s.querySelector('h2').textContent;
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = '#' + s.id;
+    a.innerHTML = '<span class="n"></span><span class="t"></span>';
+    a.querySelector('.n').textContent = n;
+    a.querySelector('.t').textContent = h;
+    li.appendChild(a); toc.appendChild(li);
+    return a;
+  });
+  const io = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (e.isIntersecting) {
+        const i = secs.indexOf(e.target);
+        links.forEach((a, j) => a.classList.toggle('on', i === j));
+      }
+    });
+  }, { rootMargin: '-10% 0px -75% 0px' });
+  secs.forEach(s => io.observe(s));
+})();
+</script>
+
+</body>
+</html>

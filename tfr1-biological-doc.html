@@ -1,0 +1,1536 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The TfR1 Problem</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    /* Document skeleton: matches what the Artifact host injects, so the local
+       file renders identically to the published page. */
+    :root {
+      color-scheme: light;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    body { margin: 0; font: 14px system-ui, -apple-system, sans-serif; }
+    img { max-width: 100%; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+
+<style>
+/* Layout: single ~68ch reading column, sticky section index on the left at desktop.
+   Colour carries meaning throughout: teal = pH 7.4 (blood, outside the cell),
+   amber = pH 6.0 (inside the endosome). The reader learns to read the palette. */
+:root {
+  --bg:        #f4f6f7;
+  --surface:   #ffffff;
+  --surface-2: #eceff1;
+  --fg:        #14181d;
+  --fg-muted:  #58636e;
+  --fg-faint:  #8a949e;
+  --rule:      #d9dee3;
+  --rule-soft: #e7ebee;
+
+  --neutral:   #0b766c;   /* pH 7.4 */
+  --neutral-w: #dbeeeb;   /* teal wash */
+  --acid:      #b4460d;   /* pH 6.0 */
+  --acid-w:    #fae7d9;   /* amber wash */
+  --accent:    var(--neutral);
+
+  --font-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Spectral', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --measure: 68ch;
+  --gutter-l: max(20px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(20px, env(safe-area-inset-right, 0px));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:        #0e1216;
+    --surface:   #161b20;
+    --surface-2: #1d242a;
+    --fg:        #e4e8eb;
+    --fg-muted:  #96a1ab;
+    --fg-faint:  #6b757f;
+    --rule:      #2a323a;
+    --rule-soft: #212830;
+    --neutral:   #34d0bd;
+    --neutral-w: #11322f;
+    --acid:      #f59354;
+    --acid-w:    #3a2113;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:        #0e1216;
+  --surface:   #161b20;
+  --surface-2: #1d242a;
+  --fg:        #e4e8eb;
+  --fg-muted:  #96a1ab;
+  --fg-faint:  #6b757f;
+  --rule:      #2a323a;
+  --rule-soft: #212830;
+  --neutral:   #34d0bd;
+  --neutral-w: #11322f;
+  --acid:      #f59354;
+  --acid-w:    #3a2113;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.65;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- shell ---------- */
+.shell {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-left: var(--gutter-l);
+  padding-right: var(--gutter-r);
+}
+@media (min-width: 1000px) {
+  .shell { grid-template-columns: 220px minmax(0, 1fr); gap: 56px; }
+}
+
+/* ---------- index ---------- */
+.index { display: none; }
+@media (min-width: 1000px) {
+  .index {
+    display: block;
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 28px);
+    align-self: start;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    padding-block: 28px;
+    font-family: var(--font-display);
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+}
+.index-label {
+  font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--fg-faint); font-weight: 600; margin-bottom: 14px;
+}
+.index ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.index a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 6px;
+  color: var(--fg-muted); text-decoration: none;
+  padding: 5px 8px 5px 0; border-left: 2px solid transparent; padding-left: 10px;
+  transition: color .15s, border-color .15s;
+}
+.index a:hover { color: var(--fg); }
+.index a .n { color: var(--fg-faint); font-variant-numeric: tabular-nums; }
+.index a.on { color: var(--fg); border-left-color: var(--accent); font-weight: 600; }
+.index a.on .n { color: var(--accent); }
+
+/* ---------- masthead ---------- */
+.masthead { padding-block: 56px 36px; border-bottom: 1px solid var(--rule); max-width: var(--measure); }
+.eyebrow {
+  font-family: var(--font-display); font-size: 11px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 18px;
+}
+h1 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(34px, 6.5vw, 54px); line-height: 1.03;
+  letter-spacing: -.022em; margin: 0 0 20px; text-wrap: balance;
+}
+.standfirst { font-size: 20px; line-height: 1.55; color: var(--fg-muted); margin: 0; }
+.meta {
+  margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px 22px;
+  font-family: var(--font-display); font-size: 12px; color: var(--fg-faint);
+}
+.meta b { color: var(--fg-muted); font-weight: 600; }
+
+/* ---------- content ---------- */
+main { padding-bottom: 100px; }
+section { max-width: var(--measure); padding-block: 48px 8px; scroll-margin-top: 24px; }
+section + section { border-top: 1px solid var(--rule-soft); }
+
+.sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+.sec-num {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  color: var(--accent); letter-spacing: .04em; padding-top: 6px;
+}
+h2 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(25px, 4vw, 33px); line-height: 1.15;
+  letter-spacing: -.016em; margin: 0; text-wrap: balance;
+}
+h3 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 18px; line-height: 1.3; letter-spacing: -.005em;
+  margin: 38px 0 2px;
+}
+p { margin: 16px 0; }
+a { color: var(--accent); }
+strong { font-weight: 600; }
+em { font-style: italic; }
+code, .mono { font-family: var(--font-mono); font-size: .86em; }
+code {
+  background: var(--surface-2); padding: 1px 5px; border-radius: 3px;
+  color: var(--fg);
+}
+ul, ol { margin: 16px 0; padding-left: 22px; }
+li { margin: 7px 0; padding-left: 3px; }
+li::marker { color: var(--fg-faint); }
+
+/* ---------- key statement ---------- */
+.key {
+  margin: 30px 0; padding: 20px 24px;
+  background: var(--surface); border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  font-size: 18px; line-height: 1.55;
+}
+.key p { margin: 0; }
+.key p + p { margin-top: 12px; }
+.key.acid { border-left-color: var(--acid); }
+
+/* ---------- aside: CS framing ---------- */
+.cs {
+  margin: 26px 0; padding: 16px 20px;
+  background: var(--surface-2); border-radius: 6px;
+  font-size: 15.5px; line-height: 1.55; color: var(--fg-muted);
+}
+.cs p { margin: 0; }
+.cs p + p { margin-top: 10px; }
+.cs .tag {
+  display: block; font-family: var(--font-display); font-size: 10.5px;
+  font-weight: 600; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--fg-faint); margin-bottom: 7px;
+}
+
+/* ---------- tables ---------- */
+.tw { overflow-x: auto; margin: 26px 0; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 420px; }
+th {
+  font-family: var(--font-display); font-size: 11px; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--fg-faint);
+  text-align: left; padding: 0 16px 9px 0; border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+td { padding: 11px 16px 11px 0; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+td:last-child, th:last-child { padding-right: 0; }
+tbody tr:last-child td { border-bottom: none; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.hl td { background: var(--neutral-w); }
+tr.hl td:first-child { font-weight: 600; }
+
+/* ---------- figures ---------- */
+figure { margin: 34px 0; }
+figure svg { display: block; width: 100%; max-width: 100%; height: auto; }
+.figbox {
+  background: var(--surface); border: 1px solid var(--rule-soft);
+  border-radius: 8px; padding: 22px 20px;
+}
+figcaption {
+  margin-top: 13px; font-size: 14px; line-height: 1.5; color: var(--fg-muted);
+  font-family: var(--font-display); font-weight: 500;
+}
+figcaption b { color: var(--fg); font-weight: 600; }
+.svg-fg { fill: var(--fg); }
+.svg-muted { fill: var(--fg-muted); }
+.svg-faint { fill: var(--fg-faint); }
+text { font-family: var(--font-display); }
+.lbl { font-size: 12px; font-weight: 500; }
+.lbl-s { font-size: 10.5px; font-weight: 500; }
+.lbl-b { font-size: 12px; font-weight: 700; }
+.lbl-mono { font-family: var(--font-mono); font-size: 11px; }
+
+/* ---------- glossary term ---------- */
+.term {
+  font: inherit; color: inherit; background: none; border: none; padding: 0;
+  cursor: help; border-bottom: 1px dashed var(--accent);
+  text-decoration: none;
+}
+.term:hover, .term:focus-visible { background: var(--neutral-w); outline: none; }
+#pop {
+  position: absolute; z-index: 50; max-width: 300px;
+  background: var(--surface); color: var(--fg);
+  border: 1px solid var(--rule); border-radius: 7px;
+  padding: 11px 14px; font-size: 14.5px; line-height: 1.45;
+  box-shadow: 0 6px 24px rgba(0,0,0,.14);
+}
+#pop b { font-family: var(--font-display); font-weight: 600; display: block; margin-bottom: 3px; font-size: 13px; }
+
+/* ---------- pH simulator ---------- */
+.sim {
+  margin: 34px 0; background: var(--surface);
+  border: 1px solid var(--rule); border-radius: 10px; overflow: hidden;
+}
+.sim-head {
+  padding: 14px 20px; border-bottom: 1px solid var(--rule-soft);
+  font-family: var(--font-display); font-size: 12px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--fg-faint);
+}
+.sim-body { padding: 20px; display: grid; gap: 20px; }
+@media (min-width: 680px) { .sim-body { grid-template-columns: 1fr 1fr; gap: 28px; } }
+.sim-controls { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.ctl label {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 600;
+  color: var(--fg-muted); margin-bottom: 7px;
+}
+.ctl label .v { font-family: var(--font-mono); font-size: 15px; color: var(--fg); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.readout { display: grid; gap: 10px; }
+.stat {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 9px 12px; background: var(--surface-2); border-radius: 6px;
+}
+.stat .k { font-family: var(--font-display); font-size: 12.5px; color: var(--fg-muted); }
+.stat .v { font-family: var(--font-mono); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.verdict {
+  padding: 11px 14px; border-radius: 6px; font-family: var(--font-display);
+  font-size: 13.5px; font-weight: 600; line-height: 1.4;
+}
+.verdict.bound { background: var(--neutral-w); color: var(--neutral); }
+.verdict.released { background: var(--acid-w); color: var(--acid); }
+.sim-viz { display: flex; align-items: center; justify-content: center; min-width: 0; }
+.sim-note { padding: 0 20px 18px; font-size: 14px; color: var(--fg-muted); line-height: 1.5; }
+
+/* ---------- glossary ---------- */
+.gl { max-width: var(--measure); }
+.gl-list { display: grid; gap: 0; margin-top: 20px; }
+.gl-item {
+  display: grid; gap: 2px 20px; padding: 13px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+@media (min-width: 620px) { .gl-item { grid-template-columns: 185px 1fr; } }
+.gl-t { font-family: var(--font-display); font-weight: 600; font-size: 15px; }
+.gl-d { font-size: 15.5px; color: var(--fg-muted); line-height: 1.5; }
+
+/* ---------- checkpoint ---------- */
+.ckpt {
+  margin: 34px 0 10px; padding: 18px 22px;
+  border: 1px dashed var(--rule); border-radius: 8px; background: var(--surface);
+}
+.ckpt .tag {
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 600;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--accent);
+  display: block; margin-bottom: 9px;
+}
+.ckpt ul { margin: 0; padding-left: 20px; font-size: 15.5px; }
+.ckpt li { margin: 5px 0; }
+
+/* ---------- footer ---------- */
+footer {
+  max-width: var(--measure); padding-block: 40px 70px;
+  border-top: 1px solid var(--rule); font-size: 14.5px; color: var(--fg-muted);
+}
+footer p { margin: 10px 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+
+<div class="shell">
+
+<nav class="index" aria-label="Sections">
+  <div class="index-label">Contents</div>
+  <ol id="toc"></ol>
+</nav>
+
+<div>
+
+<header class="masthead">
+  <div class="eyebrow">Project primer · Biology from zero</div>
+  <h1>The TfR1 Problem</h1>
+  <p class="standfirst">We are designing a protein that grabs hold of a receptor on the surface of brain blood vessels, rides it into the cell, and then lets go again because the inside is slightly more acidic than the outside. This page explains every piece of that sentence from the beginning, assuming you know no biology at all.</p>
+  <div class="meta">
+    <span><b>Audience</b> &nbsp;Engineers and programmers, no bio background</span>
+    <span><b>Reading time</b> &nbsp;~25 minutes</span>
+    <span><b>Deadline</b> &nbsp;1 November 2026</span>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ 0 ============ -->
+<section id="s0">
+  <div class="sec-head"><span class="sec-num">00</span><h2>The whole problem on one screen</h2></div>
+
+  <p>We have entered a competition whose task is to design a small protein, from scratch and entirely on a computer, that manages to do three separate things at the same time. Once submissions close, a laboratory will synthesise the designs that scored best and measure whether they actually work.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>#</th><th>Requirement</th><th>In plain terms</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1</td><td>Bind human TfR1 at pH 7.4</td><td>Stick to a specific human protein, under the conditions found in blood</td></tr>
+      <tr><td class="num">2</td><td>Bind mouse TfR1 at pH 7.4</td><td>Also stick to the mouse version of that protein, so the drug can be tested in mice</td></tr>
+      <tr><td class="num">3</td><td>Release human TfR1 at pH 6.0</td><td>Let go the moment the acidity rises slightly</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>The third requirement is the interesting one, and although it looks arbitrary at first, it is anything but. A slight rise in acidity is the signal by which a molecule can tell that it has been swallowed by a cell, so what we are really asking our protein to do is notice that it has moved indoors and respond by letting go of whatever it was holding.</p>
+
+  <h3>The same thing, stated precisely</h3>
+
+  <p>That table is the brief as the competition writes it. Stated in the language of the problem, which parts 01 to 10 below will build up from nothing, the specification reads like this.</p>
+
+  <ul>
+    <li><strong>Bind the apical domain, and leave the transferrin site alone.</strong> TfR1 has a patch at the top with no natural partner, which is where we aim. Residues 619–670 form the site where the iron courier binds, and blocking that would stop iron delivery throughout the body and cause anaemia.</li>
+    <li><strong>Grip the three positions that human and mouse share.</strong> Of the nine key positions on the apical patch, human and mouse TfR1 have only three in common. A binder that works in both species has to take most of its grip from those three while tolerating the six that differ, either by avoiding them or by contacting them in a way that works either way.</li>
+    <li><strong>Put histidines at the centre of the contact surface.</strong> Histidine is the only amino acid whose tipping point, around pKa 6.5, falls between pH 7.4 and pH 6.0, which makes it the only residue that changes its charge between the two conditions. Where it sits matters more than how many there are, and one placed beside an already-positive side chain hits hardest, because protonating it creates direct repulsion.</li>
+    <li><strong>Clear 1 µM, then go as low as you can.</strong> K<sub>D</sub> below 1 µM is the floor for qualifying. Among the designs that survive the pH test, the tightest binder wins, so the threshold is something to clear rather than something to aim at.</li>
+    <li><strong>Design it from scratch.</strong> The rules require the binder to be <button class="term" data-t="denovo">de novo</button>, so taking an existing anti-TfR1 antibody and modifying it is disqualifying. We check our designs against known structures to prove originality.</li>
+  </ul>
+
+  <h3>Why this is hard</h3>
+
+  <p>The first requirement and the third pull in opposite directions. The strongest protein contact surfaces are large, greasy and deeply buried, with their binding energy spread thinly across hundreds of small contributions, and a surface built that way cannot be broken by one extra charge no matter where you put it. What we need instead is a surface that is strong at pH 7.4 and yet has a single point of failure, with a histidine sitting exactly on it.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 196" role="img" aria-label="A band of viable designs sits between interfaces too weak to bind at all and interfaces so strongly buried that a protonated histidine cannot break them">
+        <!-- zones -->
+        <rect x="40" y="46" width="186" height="62" fill="var(--surface-2)"/>
+        <rect x="226" y="46" width="166" height="62" fill="var(--neutral-w)"/>
+        <rect x="392" y="46" width="208" height="62" fill="var(--acid-w)"/>
+        <rect x="226" y="46" width="166" height="62" fill="none" stroke="var(--neutral)" stroke-width="2.4"/>
+
+        <!-- zone titles -->
+        <text class="lbl-b svg-muted" x="133" y="74" text-anchor="middle">Too weak</text>
+        <text class="lbl-s svg-muted" x="133" y="93" text-anchor="middle">never binds at all</text>
+
+        <text class="lbl-b" x="309" y="74" text-anchor="middle" fill="var(--neutral)">WHAT WE WANT</text>
+        <text class="lbl-s" x="309" y="93" text-anchor="middle" fill="var(--neutral)">holds at 7.4, breaks at 6.0</text>
+
+        <text class="lbl-b" x="496" y="74" text-anchor="middle" fill="var(--acid)">Too well buried</text>
+        <text class="lbl-s" x="496" y="93" text-anchor="middle" fill="var(--acid)">one charge cannot break it</text>
+
+        <!-- which requirement fails -->
+        <text class="lbl-s svg-faint" x="133" y="132" text-anchor="middle">fails ① — no measurable K</text>
+        <text class="lbl-s" x="309" y="132" text-anchor="middle" fill="var(--neutral)" font-weight="700">all three satisfied</text>
+        <text class="lbl-s svg-faint" x="496" y="132" text-anchor="middle">fails ③ — binds at both pH values</text>
+
+        <!-- axis -->
+        <line x1="40" y1="158" x2="600" y2="158" stroke="currentColor" stroke-width="1.3"/>
+        <path d="M592 153 L600 158 L592 163" fill="none" stroke="currentColor" stroke-width="1.3"/>
+        <text class="lbl-s svg-faint" x="40" y="180">how much binding energy the contact surface carries, and how thinly it is spread</text>
+
+        <text class="lbl-s svg-faint" x="320" y="28" text-anchor="middle">the band is narrow, and nothing in our toolchain can measure which side of it a design lands on</text>
+      </svg>
+    </div>
+    <figcaption><b>The viable designs sit in a narrow band.</b> The axis is a simplification, because what really matters is not raw strength but whether the binding energy is concentrated enough to have a single point of failure. A thinly spread interface can be weak and still unbreakable.</figcaption>
+  </figure>
+
+  <p>Requirement 2 then narrows things further by restricting where on the patch we may bind at all, so the designs we are hunting for sit in the intersection of all three constraints.</p>
+
+  <p>The hardest part is not biological. None of the tools we design with, meaning RFdiffusion, AlphaFold, ProteinMPNN and the rest, represent pH or charge state at all, so the one requirement that defines this challenge is invisible to every model in the pipeline. The histidine placement has to be reasoned out by hand and tested blind, on the only twenty designs we are allowed to submit.</p>
+
+  <h3>How to read the rest</h3>
+
+  <p>Nothing below assumes any prior biology, and each part uses only terms that have already been defined in the parts before it. Words carrying a dashed underline, like <button class="term" data-t="protein">protein</button>, have a definition you can click to read, and every one of them is also collected in the <a href="#s10">glossary</a> at the end. If a sentence in this summary did not mean anything to you, that is expected, and the part that explains it is listed in the contents.</p>
+</section>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <div class="sec-head"><span class="sec-num">01</span><h2>What a protein is</h2></div>
+
+  <p>A <button class="term" data-t="protein">protein</button> is a chain, built by linking small molecules called <button class="term" data-t="amino">amino acids</button> end to end like beads on a string. Because there are 20 standard kinds of amino acid to choose from, a protein is quite literally a string over a 20-letter alphabet.</p>
+
+  <p>Every amino acid is built from an identical backbone section, which does the linking, together with a <button class="term" data-t="sidechain">side chain</button> that sticks out sideways and is what distinguishes the 20 types from one another. If the backbone is the chassis, then the side chains are the payload, because essentially all of the chemistry that matters happens there.</p>
+
+  <p>Once the chain exists it does not stay floppy for long, since it folds spontaneously and reproducibly into one specific three-dimensional shape that is determined entirely by its sequence. Give it the same sequence and it will arrive at the same shape every time.</p>
+
+  <div class="cs">
+    <span class="tag">If you think in code</span>
+    <p>The sequence is source code, the folded 3D structure is the compiled binary, and the function is runtime behaviour. Folding is the compiler that turns one into the other, and AlphaFold is a model that learned to emulate that compiler.</p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 190" role="img" aria-label="A protein sequence folds into a 3D shape, and that shape binds a target by surface complementarity">
+        <defs>
+          <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- stage 1 -->
+        <text class="lbl-s svg-faint" x="12" y="20" letter-spacing="1.4">1 · SEQUENCE</text>
+        <g class="lbl-mono svg-fg">
+          <text x="12" y="62">M K T A Y I</text>
+          <text x="12" y="80">A K Q R Q I</text>
+          <text x="12" y="98">S F V K S H F</text>
+        </g>
+        <text class="lbl-s svg-muted" x="12" y="130">a string over a</text>
+        <text class="lbl-s svg-muted" x="12" y="145">20-letter alphabet</text>
+
+        <line x1="150" y1="80" x2="196" y2="80" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar1)"/>
+        <text class="lbl-s svg-faint" x="173" y="68" text-anchor="middle">folds</text>
+
+        <!-- stage 2 -->
+        <text class="lbl-s svg-faint" x="214" y="20" letter-spacing="1.4">2 · STRUCTURE</text>
+        <path d="M232 104 C 240 64, 268 58, 282 78 C 296 98, 272 116, 258 104 C 244 92, 262 62, 290 60 C 318 58, 330 92, 312 112 C 296 130, 262 126, 248 112"
+              fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        <circle cx="232" cy="104" r="3.4" fill="currentColor"/>
+        <circle cx="248" cy="112" r="3.4" fill="currentColor"/>
+        <text class="lbl-s svg-muted" x="214" y="145">one specific</text>
+        <text class="lbl-s svg-muted" x="214" y="160">reproducible shape</text>
+
+        <line x1="350" y1="80" x2="396" y2="80" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar1)"/>
+        <text class="lbl-s svg-faint" x="373" y="68" text-anchor="middle">fits</text>
+
+        <!-- stage 3: complementary surfaces -->
+        <text class="lbl-s svg-faint" x="414" y="20" letter-spacing="1.4">3 · FUNCTION</text>
+        <path d="M414 48 L492 48 C 492 64, 476 62, 476 76 C 476 90, 492 88, 492 104 L414 104 Z"
+              fill="none" stroke="currentColor" stroke-width="2"/>
+        <text class="lbl-s svg-muted" x="424" y="82">target</text>
+        <path d="M580 48 L504 48 C 504 64, 520 62, 520 76 C 520 90, 504 88, 504 104 L580 104 Z"
+              fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2"/>
+        <text class="lbl-s" x="568" y="82" text-anchor="end" fill="var(--neutral)">binder</text>
+        <text class="lbl-s svg-muted" x="414" y="138">shapes that match</text>
+        <text class="lbl-s svg-muted" x="414" y="153">stick together</text>
+      </svg>
+    </div>
+    <figcaption><b>The central chain of reasoning.</b> Sequence determines shape; shape determines function. Proteins do their jobs by physically touching other molecules with surfaces that fit. That is the mechanism behind nearly all of biology.</figcaption>
+  </figure>
+
+  <h3>Two levels of structure above the bare chain</h3>
+
+  <p>Folding does not happen all at once from chain to finished shape. There is an intermediate level worth knowing about, because the names of things later on depend on it. As a chain folds, stretches of it settle into one of two recurring local shapes: a spiral coil called an <button class="term" data-t="helix">alpha-helix</button>, or a flat zigzag ribbon that lines up alongside its neighbours to form a <button class="term" data-t="sheet">beta-sheet</button>. Almost every protein is built from some arrangement of corkscrews and ribbons connected by looser loops.</p>
+
+  <p>Those local shapes then pack together into <button class="term" data-t="domain">domains</button>. A domain is a compact chunk of chain, usually somewhere between 100 and 200 residues, that folds up as its own semi-independent unit and holds its shape whether or not the rest of the protein is there. A domain is a module in all but name, and large proteins are generally three or four of them strung together, each doing a different job.</p>
+
+  <p>One more word you will need constantly: a <button class="term" data-t="residue">residue</button> is one amino acid sitting at one numbered position in the chain, so when the competition describes the transferrin site as "residues 619–670" it simply means positions 619 through 670.</p>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <div class="sec-head"><span class="sec-num">02</span><h2>How two proteins stick together</h2></div>
+
+  <p>When two proteins bind to one another, no permanent chemical bond forms between them. Instead they are held together by a large number of individually feeble attractions spread across their contact surfaces: slight charges pulling at one another, greasy patches huddling together away from water, and atoms sharing a hydrogen between them. Any single one of these is weak enough to ignore, but a hundred of them across a well-matched surface add up to a firm grip.</p>
+
+  <p>Velcro is a better mental image here than the usual lock and key, because it captures both the way many small hooks share the load without any one of them being essential, and the way the overall strength depends on how well the two surfaces match across their whole area.</p>
+
+  <div class="key">
+    <p>This has a consequence that matters enormously later on: <strong>binding is reversible and statistical rather than permanent.</strong> At any given instant some copies of the two proteins are stuck together while others are floating free, and they swap between those states continually. Binding is therefore not a matter of on or off, but of what proportion is bound at any moment.</p>
+  </div>
+
+  <h3>K<sub>D</sub>, the number that measures stickiness</h3>
+
+  <p>We quantify that ratio with the <button class="term" data-t="kd">dissociation constant</button>, written K<sub>D</sub>. It is a concentration: <strong>how much of one protein has to be floating around before half the copies of the other one have caught hold of it.</strong></p>
+
+  <p>Picture the experiment the competition actually runs. Our binder is anchored to a surface, and TfR1 is washed over it at a known concentration. If TfR1 has to be piled on very thickly before half our anchored binders are holding one, then binding is weak — and K<sub>D</sub>, being that concentration, is a large number. If a faint trace of TfR1 is enough, binding is strong and K<sub>D</sub> is small.</p>
+
+  <p><strong>So lower K<sub>D</sub> means tighter binding.</strong> It is a backwards-feeling scale and it trips up everyone at first.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 620 132" role="img" aria-label="Scale of binding strengths from picomolar, very tight, to millimolar, barely binding, with the competition threshold at one micromolar">
+        <line x1="40" y1="56" x2="580" y2="56" stroke="currentColor" stroke-width="1.2"/>
+        <g text-anchor="middle">
+          <g>
+            <line x1="60" y1="48" x2="60" y2="64" stroke="currentColor" stroke-width="1.2"/>
+            <text class="lbl-mono svg-fg" x="60" y="40">1 pM</text>
+            <text class="lbl-s svg-faint" x="60" y="82">extremely</text>
+            <text class="lbl-s svg-faint" x="60" y="95">tight</text>
+          </g>
+          <g>
+            <line x1="190" y1="48" x2="190" y2="64" stroke="currentColor" stroke-width="1.2"/>
+            <text class="lbl-mono svg-fg" x="190" y="40">1 nM</text>
+            <text class="lbl-s svg-faint" x="190" y="82">strong</text>
+            <text class="lbl-s svg-faint" x="190" y="95">(good antibody)</text>
+          </g>
+          <g>
+            <line x1="320" y1="48" x2="320" y2="64" stroke="currentColor" stroke-width="1.2"/>
+            <text class="lbl-mono svg-fg" x="320" y="40">100 nM</text>
+            <text class="lbl-s svg-faint" x="320" y="82">decent</text>
+          </g>
+          <g>
+            <line x1="450" y1="44" x2="450" y2="68" stroke="var(--neutral)" stroke-width="2.2"/>
+            <text class="lbl-mono" x="450" y="36" fill="var(--neutral)">1 µM</text>
+            <text class="lbl-s" x="450" y="86" fill="var(--neutral)" font-weight="700">our threshold</text>
+            <text class="lbl-s svg-faint" x="450" y="99">must beat this</text>
+          </g>
+          <g>
+            <line x1="560" y1="48" x2="560" y2="64" stroke="currentColor" stroke-width="1.2"/>
+            <text class="lbl-mono svg-fg" x="560" y="40">1 mM</text>
+            <text class="lbl-s svg-faint" x="560" y="82">barely binds</text>
+          </g>
+        </g>
+        <text class="lbl-s svg-muted" x="40" y="122">← tighter</text>
+        <text class="lbl-s svg-muted" x="580" y="122" text-anchor="end">weaker →</text>
+      </svg>
+    </div>
+    <figcaption><b>Each labelled step is roughly 1000× weaker than the one before it.</b> The competition requires our binder to beat 1 µM against human TfR1 — a deliberately modest bar, so that merely-decent binders still count.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <div class="sec-head"><span class="sec-num">03</span><h2>The 20 amino acids have personalities</h2></div>
+
+  <p>You do not need to learn all 20 by name, but you do need the categories, because which category a side chain belongs to determines how it behaves when it ends up on a contact surface.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Category</th><th>Behaviour</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td><b>Hydrophobic</b><br><span style="color:var(--fg-faint);font-size:13px">"water-fearing", greasy</span></td><td>Avoid water, clump together, usually buried in the protein's core or at contact surfaces</td><td>Leucine, Valine, Phenylalanine</td></tr>
+      <tr><td><b>Negatively charged</b></td><td>Carry a permanent negative charge</td><td>Aspartate, Glutamate</td></tr>
+      <tr><td><b>Positively charged</b></td><td>Carry a permanent positive charge</td><td>Lysine, Arginine</td></tr>
+      <tr><td><b>Polar</b></td><td>No net charge but lopsided; can form hydrogen bonds</td><td>Serine, Threonine, Asparagine</td></tr>
+      <tr class="hl"><td><b>Special cases</b></td><td>Break the rules in useful ways. One of these runs our entire project.</td><td>Proline, Glycine, Cysteine, <b>Histidine</b></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Two rules follow from this, and the second one is the mechanism of everything we are building:</p>
+
+  <ol>
+    <li><strong>Opposite charges attract while like charges repel.</strong> A positive side chain sitting opposite a negative one therefore acts as glue, whereas a positive facing another positive acts as a wedge driving the two surfaces apart.</li>
+    <li><strong>Burying a charge away from water is expensive.</strong> Water molecules cluster around charges and stabilise them, so if you push a charged side chain into the middle of a protein–protein contact surface where no water can reach it, you pay a steep energetic penalty for doing so. This is why contact surfaces tend to be mostly greasy in the middle, with whatever charges they carry arranged around the rim.</li>
+  </ol>
+
+  <div class="ckpt">
+    <span class="tag">Hold onto this</span>
+    <ul>
+      <li>Rule 2 contains the entire pH switch in embryo, and everything in the next three sections is an elaboration of the single idea that a buried charge breaks a contact surface.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <div class="sec-head"><span class="sec-num">04</span><h2>pH, and the one amino acid that changes its mind</h2></div>
+
+  <p>This is the most important section on the page, and everything else here is really context for it.</p>
+
+  <h3>What pH measures</h3>
+
+  <p>Water does not sit inertly as H<sub>2</sub>O, because a small fraction of its molecules continually split apart and release a free <button class="term" data-t="proton">proton</button>. A proton, written H<sup>+</sup>, is simply a hydrogen atom that has lost its electron, which leaves nothing behind but a bare positive charge drifting through the solution. What <button class="term" data-t="ph">pH</button> measures is how many of those free protons are present.</p>
+
+  <p>The scale used to report this is both logarithmic and inverted, which makes it the second backwards-feeling measurement on this page:</p>
+
+  <ul>
+    <li><strong>Low pH = acidic = many free protons</strong></li>
+    <li><strong>High pH = basic = few free protons</strong></li>
+    <li>pH 7 is neutral. Blood sits at 7.4.</li>
+  </ul>
+
+  <p>Each step of 1.0 on the scale represents a tenfold change in proton concentration, so the two conditions our binder has to tell apart, pH 7.4 and pH 6.0, are separated by 1.4 units. In practical terms that means the acidic condition contains roughly <strong>25 times</strong> as many free protons as the neutral one.</p>
+
+  <h3>Protonation</h3>
+
+  <p>Some side chains are able to grab a free proton out of solution and hold onto it, and when one does so it takes on that proton's positive charge. The term for this is that the side chain has become <button class="term" data-t="protonated">protonated</button>.</p>
+
+  <p>Whether a given side chain is holding a proton at any particular moment depends on how many protons are available to grab, which is to say that it depends on pH. When protons are plentiful the side chain is likely to be holding one, and when they are scarce it has probably let go. This is a dynamic equilibrium rather than a fixed state, with individual side chains picking up and releasing protons continually.</p>
+
+  <h3>pKa: the tipping point</h3>
+
+  <p>Each type of side chain has a characteristic tipping point, its <button class="term" data-t="pka">pKa</button>:</p>
+
+  <div class="key">
+    <p><strong>pKa is the pH at which exactly half the copies of that side chain are holding a proton.</strong></p>
+    <p>Above that pH most of them have let go, and below it most are holding on. The transition is reasonably sharp, in that moving one pH unit to either side puts you at roughly 90/10.</p>
+  </div>
+
+  <h3>And here is the punchline</h3>
+
+  <p>These are the pKa values of every side chain that can protonate at all, with what each one is doing at our two conditions:</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 290" role="img" aria-label="A pH axis from 3 to 13 showing that only histidine has a pKa between pH 6.0 and pH 7.4; all other titratable side chains sit far outside that window">
+        <!-- operating window band -->
+        <rect x="233" y="34" width="86" height="192" fill="var(--neutral-w)"/>
+        <line x1="233" y1="34" x2="233" y2="226" stroke="var(--acid)" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <line x1="319" y1="34" x2="319" y2="226" stroke="var(--neutral)" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <text class="lbl-s" x="233" y="26" text-anchor="middle" fill="var(--acid)" font-weight="700">pH 6.0</text>
+        <text class="lbl-s" x="319" y="26" text-anchor="middle" fill="var(--neutral)" font-weight="700">pH 7.4</text>
+        <text class="lbl-s svg-faint" x="276" y="243" text-anchor="middle">our operating window</text>
+
+        <!-- axis -->
+        <line x1="60" y1="226" x2="610" y2="226" stroke="currentColor" stroke-width="1.2"/>
+        <g text-anchor="middle" class="lbl-mono svg-faint">
+          <text x="60" y="262">pH 3</text>
+          <text x="172" y="262">5</text>
+          <text x="284" y="262">7</text>
+          <text x="396" y="262">9</text>
+          <text x="508" y="262">11</text>
+          <text x="610" y="262">13</text>
+        </g>
+        <g stroke="currentColor" stroke-width="1" opacity=".4">
+          <line x1="60" y1="226" x2="60" y2="232"/><line x1="172" y1="226" x2="172" y2="232"/>
+          <line x1="284" y1="226" x2="284" y2="232"/><line x1="396" y1="226" x2="396" y2="232"/>
+          <line x1="508" y1="226" x2="508" y2="232"/><line x1="610" y1="226" x2="610" y2="232"/>
+        </g>
+
+        <!-- markers: x = 60 + (pKa-3)*56 -->
+        <!-- Asp 3.9 -> 110 ; Glu 4.3 -> 133 ; His 6.5 -> 256 ; Cys 8.3 -> 357 ; Lys 10.5 -> 480 ; Arg 12.5 -> 592 -->
+        <g>
+          <circle cx="110" cy="196" r="5" fill="currentColor"/>
+          <text class="lbl-s svg-muted" x="110" y="184" text-anchor="middle">Asp 3.9</text>
+          <circle cx="133" cy="166" r="5" fill="currentColor"/>
+          <text class="lbl-s svg-muted" x="133" y="154" text-anchor="middle">Glu 4.3</text>
+
+          <circle cx="256" cy="110" r="9" fill="var(--acid)"/>
+          <text class="lbl-b" x="256" y="92" text-anchor="middle" fill="var(--acid)">HISTIDINE</text>
+          <text class="lbl-s" x="256" y="78" text-anchor="middle" fill="var(--acid)">pKa ≈ 6.5</text>
+
+          <circle cx="357" cy="166" r="5" fill="currentColor"/>
+          <text class="lbl-s svg-muted" x="357" y="154" text-anchor="middle">Cys 8.3</text>
+          <circle cx="480" cy="196" r="5" fill="currentColor"/>
+          <text class="lbl-s svg-muted" x="480" y="184" text-anchor="middle">Lys 10.5</text>
+          <circle cx="592" cy="166" r="5" fill="currentColor"/>
+          <text class="lbl-s svg-muted" x="592" y="154" text-anchor="middle">Arg 12.5</text>
+        </g>
+
+        <!-- drop lines -->
+        <g stroke="currentColor" stroke-width=".8" opacity=".3">
+          <line x1="110" y1="201" x2="110" y2="226"/><line x1="133" y1="171" x2="133" y2="226"/>
+          <line x1="357" y1="171" x2="357" y2="226"/><line x1="480" y1="201" x2="480" y2="226"/>
+          <line x1="592" y1="171" x2="592" y2="226"/>
+        </g>
+        <line x1="256" y1="119" x2="256" y2="226" stroke="var(--acid)" stroke-width="1.6"/>
+      </svg>
+    </div>
+    <figcaption><b>Histidine is the only switch available.</b> Every other titratable side chain has its tipping point far outside the pH 6.0–7.4 window, so it is in exactly the same state at both conditions. Only histidine flips.</figcaption>
+  </figure>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Side chain</th><th>pKa</th><th>At pH 7.4</th><th>At pH 6.0</th></tr></thead>
+    <tbody>
+      <tr><td>Aspartate / Glutamate</td><td class="num">~4</td><td>let go — negative</td><td>let go — negative</td></tr>
+      <tr class="hl"><td>Histidine</td><td class="num">~6.0–6.5</td><td>mostly let go — <b>neutral</b></td><td>mostly holding — <b>POSITIVE</b></td></tr>
+      <tr><td>Cysteine</td><td class="num">~8.3</td><td>holding</td><td>holding</td></tr>
+      <tr><td>Lysine</td><td class="num">~10.5</td><td>holding — positive</td><td>holding — positive</td></tr>
+      <tr><td>Arginine</td><td class="num">~12.5</td><td>holding — positive</td><td>holding — positive</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="key acid">
+    <p>It is worth reading that table twice, because the pattern in it is the reason this project is possible at all. In moving from pH 7.4 down to pH 6.0, <strong>every side chain stays in exactly the state it was already in, with the single exception of histidine.</strong> The acidic side chains had already given up their protons at both conditions, the basic ones were still holding onto theirs at both, and histidine's tipping point is the only one that happens to fall inside the window we care about.</p>
+    <p>That one accident of chemistry is what determines our entire strategy for the third requirement.</p>
+  </div>
+
+  <h3>Try it</h3>
+
+  <p>The fraction of histidine copies carrying a charge follows directly from the pH and the pKa, so you can watch the whole switch operate by dragging the two sliders below:</p>
+
+  <div class="sim">
+    <div class="sim-head">Histidine protonation</div>
+    <div class="sim-body">
+      <div class="sim-controls">
+        <div class="ctl">
+          <label for="ph">Environment pH <span class="v" id="phv">7.40</span></label>
+          <input type="range" id="ph" min="5" max="8.5" step="0.05" value="7.4">
+        </div>
+        <div class="ctl">
+          <label for="pka">Histidine pKa <span class="v" id="pkav">6.50</span></label>
+          <input type="range" id="pka" min="5" max="8" step="0.05" value="6.5">
+        </div>
+        <div class="readout">
+          <div class="stat"><span class="k">Carrying a + charge</span><span class="v" id="frac">11%</span></div>
+          <div class="stat"><span class="k">Free protons vs pH 7.4</span><span class="v" id="rel">1.0×</span></div>
+        </div>
+        <div class="verdict bound" id="verdict">Neutral histidine — interface intact, binder holds on</div>
+      </div>
+      <div class="sim-viz">
+        <svg viewBox="0 0 230 210" role="img" aria-label="Diagram of a binder and target interface with a histidine that gains a positive charge and pushes the two surfaces apart as pH falls">
+          <!-- target -->
+          <path id="tshape" d="M18 36 L112 36 C112 60, 92 56, 92 86 C92 116, 112 112, 112 136 L18 136 Z"
+                fill="var(--surface-2)" stroke="currentColor" stroke-width="1.6"/>
+          <text class="lbl-s svg-muted" x="32" y="90">TfR1</text>
+
+          <!-- binder (shifts right as it releases) -->
+          <g id="bgroup">
+            <path d="M212 36 L124 36 C124 60, 144 56, 144 86 C144 116, 124 112, 124 136 L212 136 Z"
+                  fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.8"/>
+            <text class="lbl-s" x="198" y="90" text-anchor="end" fill="var(--neutral)">binder</text>
+          </g>
+
+          <!-- histidine marker at the interface -->
+          <circle id="hiscirc" cx="134" cy="86" r="11" fill="var(--surface)" stroke="currentColor" stroke-width="1.6"/>
+          <text id="histext" class="lbl-b" x="134" y="90" text-anchor="middle" fill="currentColor">H</text>
+
+          <!-- repulsion arrows, hidden when bound -->
+          <g id="repel" opacity="0">
+            <path d="M118 160 L96 160" stroke="var(--acid)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M102 155 L96 160 L102 165" fill="none" stroke="var(--acid)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M150 160 L172 160" stroke="var(--acid)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M166 155 L172 160 L166 165" fill="none" stroke="var(--acid)" stroke-width="2" stroke-linecap="round"/>
+            <text class="lbl-s" x="134" y="186" text-anchor="middle" fill="var(--acid)" font-weight="700">repulsion</text>
+          </g>
+          <text class="lbl-s svg-faint" x="134" y="24" text-anchor="middle">contact surface</text>
+        </svg>
+      </div>
+    </div>
+    <div class="sim-note">The curve is Henderson–Hasselbalch, where the fraction protonated equals 1 / (1 + 10<sup>pH − pKa</sup>). Notice how much of the switch you lose when the histidine's pKa drifts away from 6.5, which is precisely why we run predicted pKa values rather than assuming them.</div>
+  </div>
+
+  <p>A single histidine on its own typically buys only a fivefold to tenfold weakening of binding, whereas the competition asks for <em>no detectable binding at all</em> at pH 6.0, which means something closer to a hundredfold. We will therefore need either two to four histidines working together, or one placed deliberately next to an existing positive side chain so that protonating it creates direct electrostatic repulsion.</p>
+
+  <div class="ckpt">
+    <span class="tag">What you now know</span>
+    <ul>
+      <li>pH counts free protons; lower pH means more of them</li>
+      <li>pKa is the pH at which a side chain is half-protonated</li>
+      <li>Histidine is the only side chain that flips state between pH 7.4 and 6.0</li>
+      <li>A buried positive charge wrecks a contact surface (rule 2 from part 3)</li>
+      <li>Therefore: histidines placed in the contact surface = a pH-triggered release mechanism</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <div class="sec-head"><span class="sec-num">05</span><h2>Why pH tells a molecule where it is</h2></div>
+
+  <p>A cell is, mechanically speaking, a bag of water wrapped in a greasy sheet called a <button class="term" data-t="membrane">membrane</button>, and that membrane acts as a barrier which water-soluble things cannot cross unaided.</p>
+
+  <p>Some proteins sit embedded through that membrane, with one part of them outside the cell and another part inside, and these are what we call <button class="term" data-t="receptor">receptors</button>. The outside part grabs hold of one specific kind of molecule, and the act of grabbing it sets off machinery on the inside.</p>
+
+  <p>The behaviour that matters for us is <button class="term" data-t="endocytosis">endocytosis</button>. When a receptor grabs its target, the membrane dimples inward around the pair of them and then pinches off, producing a sealed bubble that now sits inside the cell. That bubble is called an <button class="term" data-t="endosome">endosome</button>, and it contains the receptor together with whatever the receptor was holding at the time.</p>
+
+  <p>It is worth being clear that nothing is cut loose during this process. The receptor stays whole and stays threaded through the membrane from beginning to end, and the bubble's wall is simply a scrap of that same membrane with the receptor still embedded in it, now facing inward rather than outward. That detail is what makes a return trip possible later on, because a receptor that never left the membrane can be turned back out to face the world again.</p>
+
+  <div class="key">
+    <p>The fact that makes our entire project possible is that <strong>the cell actively pumps protons into its endosomes.</strong> From the moment the bubble seals, pumps built into its wall begin pushing H<sup>+</sup> into the enclosed space, and the pH inside starts to fall.</p>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 230" role="img" aria-label="A receptor at the cell surface at pH 7.4 is swallowed into an endosome, which is then acidified to pH 6.0, so pH reports whether a molecule is outside or inside the cell">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- outside / inside bands -->
+        <rect x="0" y="0" width="640" height="74" fill="var(--neutral-w)"/>
+        <text class="lbl-s" x="14" y="22" fill="var(--neutral)" font-weight="700">OUTSIDE THE CELL · pH 7.4</text>
+        <text class="lbl-s svg-muted" x="14" y="38">blood</text>
+        <line x1="0" y1="74" x2="640" y2="74" stroke="currentColor" stroke-width="2.6"/>
+        <text class="lbl-s svg-faint" x="626" y="90" text-anchor="end">membrane</text>
+        <text class="lbl-s svg-muted" x="14" y="214">INSIDE THE CELL</text>
+
+        <!-- step 1: bound at surface -->
+        <g>
+          <rect x="66" y="62" width="9" height="26" fill="currentColor"/>
+          <circle cx="70.5" cy="56" r="9" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.6"/>
+          <circle cx="70.5" cy="38" r="7" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.8"/>
+          <text class="lbl-s svg-muted" x="70.5" y="118" text-anchor="middle">1 · binder grabs</text>
+          <text class="lbl-s svg-muted" x="70.5" y="131" text-anchor="middle">receptor at pH 7.4</text>
+        </g>
+
+        <line x1="128" y1="100" x2="176" y2="100" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+
+        <!-- step 2: membrane dimples -->
+        <g>
+          <path d="M200 74 C 212 74, 214 104, 240 104 C 266 104, 268 74, 280 74" fill="none" stroke="currentColor" stroke-width="2.6"/>
+          <circle cx="240" cy="95" r="7" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.8"/>
+          <text class="lbl-s svg-muted" x="240" y="140" text-anchor="middle">2 · membrane</text>
+          <text class="lbl-s svg-muted" x="240" y="153" text-anchor="middle">dimples inward</text>
+        </g>
+
+        <line x1="300" y1="100" x2="348" y2="100" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+
+        <!-- step 3: sealed endosome, neutral -->
+        <g>
+          <circle cx="400" cy="112" r="30" fill="none" stroke="currentColor" stroke-width="2.4"/>
+          <circle cx="400" cy="112" r="7" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.8"/>
+          <text class="lbl-s svg-muted" x="400" y="166" text-anchor="middle">3 · sealed bubble</text>
+          <text class="lbl-s svg-muted" x="400" y="179" text-anchor="middle">(endosome)</text>
+        </g>
+
+        <g>
+          <line x1="440" y1="112" x2="486" y2="112" stroke="var(--acid)" stroke-width="1.6" marker-end="url(#ar2)" color="var(--acid)"/>
+          <text class="lbl-s" x="463" y="101" text-anchor="middle" fill="var(--acid)" font-weight="700">H⁺ pumped in</text>
+        </g>
+
+        <!-- step 4: acidified, released -->
+        <g>
+          <circle cx="540" cy="112" r="30" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="2.4"/>
+          <text class="lbl-b" x="540" y="109" text-anchor="middle" fill="var(--acid)">pH 6.0</text>
+          <circle cx="540" cy="150" r="7" fill="var(--surface)" stroke="var(--acid)" stroke-width="1.8"/>
+          <text class="lbl-s" x="540" y="186" text-anchor="middle" fill="var(--acid)" font-weight="700">4 · binder lets go</text>
+          <text class="lbl-s svg-muted" x="540" y="199" text-anchor="middle">cargo is free</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption><b>pH is a location signal.</b> Outside the cell it sits at 7.4, inside a freshly formed endosome at about 6.0, and deeper into the system, in a <button class="term" data-t="lysosome">lysosome</button>, at 5.0 or lower, which means a molecule can read its own position from the acidity around it.</figcaption>
+  </figure>
+
+  <div class="key">
+    <p>Combine this with what part 4 established and the design falls out almost on its own: <strong>a protein carrying a histidine in the right place is a protein that can tell whether it is inside or outside a cell, and that can change its behaviour accordingly.</strong></p>
+  </div>
+
+  <div class="cs">
+    <span class="tag">If you think in code</span>
+    <p>What we are writing is <code>if (inside_cell) { release(); }</code>, implemented in chemistry rather than in code. The pH serves as the variable being tested, the histidine performs the comparison, and the collapsing contact surface is the body of the branch. Histidine happens to be the only conditional that chemistry offers us anywhere in this range.</p>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <div class="sec-head"><span class="sec-num">06</span><h2>TfR1 and the iron delivery service</h2></div>
+
+  <p><button class="term" data-t="tfr1">TfR1</button>, which stands for transferrin receptor 1 and is also known as CD71, is one of those membrane receptors, and its day job is importing iron into the cell.</p>
+
+  <p>Cells need iron, but free iron is both toxic and barely soluble, so the body never transports it loose. Instead it travels bound to a dedicated courier protein called <button class="term" data-t="transferrin">transferrin</button>, which picks up two iron atoms at a time and ferries them through the blood, with TfR1 serving as the receiving dock at the far end.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 560 330" role="img" aria-label="The transferrin iron delivery cycle: iron-loaded transferrin binds TfR1 at pH 7.4, is swallowed, releases iron at pH 6.0, stays bound while empty, and detaches when returned to pH 7.4">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- cycle ring -->
+        <circle cx="280" cy="168" r="104" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 5" opacity=".45"/>
+
+        <!-- pH zones -->
+        <path d="M280 64 A104 104 0 0 1 280 272" fill="none" stroke="var(--acid)" stroke-width="3" opacity=".9"/>
+        <path d="M280 272 A104 104 0 0 1 280 64" fill="none" stroke="var(--neutral)" stroke-width="3" opacity=".9"/>
+        <text class="lbl-s" x="416" y="168" fill="var(--acid)" font-weight="700">pH 6.0</text>
+        <text class="lbl-s" x="416" y="182" fill="var(--acid)">inside endosome</text>
+        <text class="lbl-s" x="144" y="168" text-anchor="end" fill="var(--neutral)" font-weight="700">pH 7.4</text>
+        <text class="lbl-s" x="144" y="182" text-anchor="end" fill="var(--neutral)">cell surface</text>
+
+        <!-- arrowheads around ring -->
+        <g color="currentColor">
+          <path d="M334 90 L344 96" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar3)"/>
+          <path d="M378 212 L372 224" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar3)"/>
+          <path d="M224 250 L212 244" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar3)"/>
+          <path d="M182 118 L188 106" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar3)"/>
+        </g>
+
+        <!-- node 1: top, holo binds -->
+        <g>
+          <circle cx="280" cy="64" r="20" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2"/>
+          <text class="lbl-b" x="280" y="69" text-anchor="middle" fill="var(--neutral)">1</text>
+          <text class="lbl svg-fg" x="280" y="26" text-anchor="middle" font-weight="700">Loaded transferrin binds</text>
+          <text class="lbl-s svg-muted" x="280" y="41" text-anchor="middle">carries 2 iron atoms · sticks tightly at pH 7.4</text>
+        </g>
+
+        <!-- node 2: right, acidify + iron out -->
+        <g>
+          <circle cx="384" cy="168" r="20" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="2"/>
+          <text class="lbl-b" x="384" y="173" text-anchor="middle" fill="var(--acid)">2</text>
+          <text class="lbl svg-fg" x="416" y="128" font-weight="700">Acid releases the iron</text>
+          <text class="lbl-s svg-muted" x="416" y="143">swallowed; endosome drops to pH 6.0</text>
+        </g>
+
+        <!-- node 3: bottom, apo stays bound -->
+        <g>
+          <circle cx="280" cy="272" r="20" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="2"/>
+          <text class="lbl-b" x="280" y="277" text-anchor="middle" fill="var(--acid)">3</text>
+          <text class="lbl svg-fg" x="280" y="306" text-anchor="middle" font-weight="700">Empty transferrin stays attached</text>
+          <text class="lbl-s svg-muted" x="280" y="321" text-anchor="middle">rides the receptor back to the surface</text>
+        </g>
+
+        <!-- node 4: left, apo released at 7.4 -->
+        <g>
+          <circle cx="176" cy="168" r="20" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2"/>
+          <text class="lbl-b" x="176" y="173" text-anchor="middle" fill="var(--neutral)">4</text>
+          <text class="lbl svg-fg" x="144" y="128" text-anchor="end" font-weight="700">Back at pH 7.4, it detaches</text>
+          <text class="lbl-s svg-muted" x="144" y="143" text-anchor="end">free to collect more iron</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption><b>Nature has already built a pH-dependent switch into this exact receptor, although it runs in the opposite direction to the one we need.</b> Transferrin binds at neutral pH, <em>holds on</em> through the acidic step, and only releases once it has returned to neutral, whereas we need a binder that does the inverse by binding at neutral and releasing when acidic.</figcaption>
+  </figure>
+
+  <h3>The shape of TfR1</h3>
+
+  <p>TfR1 is a <button class="term" data-t="homodimer">homodimer</button>, meaning two identical copies of the protein locked together as a single working unit. The portion that sits outside the cell is called the <button class="term" data-t="ectodomain">ectodomain</button> and spans residues 121 to 760, and rather than folding into one undifferentiated lump, each copy's 640 residues fold into three distinct domains.</p>
+
+  <p>Their names are worth decoding, because the three of them follow three completely different naming conventions and nobody ever points this out:</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Domain</th><th>Named after its…</th><th>Which means</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td><b>Apical</b></td><td>position</td><td>From "apex". It sits at the top, pointing away from the cell.</td></tr>
+      <tr><td><b>Helical</b></td><td>composition</td><td>It is built predominantly from alpha-helices, the corkscrews from part 1.</td></tr>
+      <tr><td><b>Protease-like</b></td><td>resemblance</td><td>It looks like a protease, an enzyme that cuts proteins, but it does no such thing.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Because the three names follow different logics, you cannot reason by analogy between them. One tells you where the domain is, one tells you what it is made of, and one tells you what it resembles but is not.</p>
+
+  <p>There is also a wrinkle in how they map onto the sequence. The apical domain is an insertion into the middle of the protease-like domain: residues 121 to 188 begin the protease-like domain, then 189 to 383 branch off to form the apical domain, then 384 to 606 return to complete the protease-like domain, and 607 to 760 form the helical domain. Position along the chain and position in space are not the same thing, which is a useful habit of mind to pick up early.</p>
+
+  <h3>Where the domains sit, and why that decides our target</h3>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 316" role="img" aria-label="TfR1 anchored in the membrane as a butterfly-shaped dimer: apical domains at the top and fully exposed, protease-like domains flanking the middle, and the two helical domains meeting at the bottom where they both hold the dimer together and bind transferrin">
+        <defs>
+          <marker id="ar7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- approach from above -->
+        <line x1="320" y1="14" x2="320" y2="42" stroke="var(--neutral)" stroke-width="1.8" marker-end="url(#ar7)" color="var(--neutral)"/>
+        <text class="lbl-s" x="332" y="26" fill="var(--neutral)" font-weight="700">our binder approaches from here</text>
+
+        <!-- membrane -->
+        <rect x="0" y="256" width="640" height="8" fill="currentColor" opacity=".85"/>
+        <text class="lbl-s svg-faint" x="630" y="282" text-anchor="end">cell membrane</text>
+        <text class="lbl-s svg-faint" x="10" y="282">inside the cell below this line</text>
+
+        <!-- stalks -->
+        <rect x="296" y="232" width="8" height="24" fill="currentColor"/>
+        <rect x="336" y="232" width="8" height="24" fill="currentColor"/>
+
+        <!-- helical domains, meeting at the centre -->
+        <rect x="210" y="182" width="110" height="50" rx="7" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.6"/>
+        <rect x="320" y="182" width="110" height="50" rx="7" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.6"/>
+        <text class="lbl-s svg-muted" x="265" y="212" text-anchor="middle">HELICAL</text>
+        <text class="lbl-s svg-muted" x="375" y="212" text-anchor="middle">HELICAL</text>
+        <line x1="320" y1="182" x2="320" y2="232" stroke="var(--acid)" stroke-width="2.4"/>
+
+        <!-- protease-like, flanking -->
+        <rect x="186" y="124" width="104" height="48" rx="7" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.6"/>
+        <rect x="350" y="124" width="104" height="48" rx="7" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.6"/>
+        <text class="lbl-s svg-muted" x="238" y="152" text-anchor="middle">PROTEASE-LIKE</text>
+        <text class="lbl-s svg-muted" x="402" y="152" text-anchor="middle">PROTEASE-LIKE</text>
+
+        <!-- apical, at the top -->
+        <rect x="176" y="52" width="106" height="60" rx="8" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2.6"/>
+        <rect x="358" y="52" width="106" height="60" rx="8" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2.6"/>
+        <text class="lbl-b" x="229" y="80" text-anchor="middle" fill="var(--neutral)">APICAL</text>
+        <text class="lbl-s" x="229" y="97" text-anchor="middle" fill="var(--neutral)">our target</text>
+        <text class="lbl-b" x="411" y="80" text-anchor="middle" fill="var(--neutral)">APICAL</text>
+        <text class="lbl-s" x="411" y="97" text-anchor="middle" fill="var(--neutral)">our target</text>
+
+        <!-- height measure -->
+        <line x1="150" y1="52" x2="150" y2="256" stroke="currentColor" stroke-width="1" opacity=".5"/>
+        <path d="M146 58 L150 52 L154 58" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+        <path d="M146 250 L150 256 L154 250" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+        <text class="lbl-s svg-faint" x="140" y="146" text-anchor="end">furthest point</text>
+        <text class="lbl-s svg-faint" x="140" y="160" text-anchor="end">from the membrane,</text>
+        <text class="lbl-s svg-faint" x="140" y="174" text-anchor="end">nothing above it</text>
+
+        <!-- dimer interface callout -->
+        <line x1="320" y1="240" x2="320" y2="250" stroke="var(--acid)" stroke-width="1.2"/>
+        <text class="lbl-s" x="320" y="302" text-anchor="middle" fill="var(--acid)" font-weight="700">the two helical domains press together here, holding the dimer</text>
+
+        <!-- transferrin site callout -->
+        <line x1="430" y1="200" x2="486" y2="200" stroke="var(--acid)" stroke-width="1.4"/>
+        <text class="lbl" x="494" y="196" fill="var(--acid)" font-weight="700">Transferrin binds</text>
+        <text class="lbl-s svg-muted" x="494" y="212">residues 619–670</text>
+        <text class="lbl-s svg-muted" x="494" y="226">keep clear of this</text>
+
+        <text class="lbl-s svg-faint" x="320" y="124" text-anchor="middle">two identical copies</text>
+      </svg>
+    </div>
+    <figcaption><b>The geometry decides the target.</b> The two helical domains meet at the bottom, where they both hold the dimer together and form the transferrin site, which makes that end crowded and off-limits. The apical domains sit at the top with nothing above them.</figcaption>
+  </figure>
+
+  <p>Three reasons for aiming at the apical domain fall straight out of that picture.</p>
+
+  <p><strong>It is accessible.</strong> Sitting at the very top of the structure with nothing above it, the apical domain is the easiest part of the whole receptor for a designed binder to reach. The helical domain, by contrast, is down near the membrane and partly buried against its own partner copy.</p>
+
+  <p><strong>It is unoccupied.</strong> The helical domain is already doing two jobs at once, holding the dimer together and binding transferrin, whereas the apical domain has no known natural partner at all. There is nothing there for us to compete with.</p>
+
+  <p><strong>It is as far from the iron site as it is possible to get.</strong> Binding at the top leaves the transferrin site at the bottom entirely free, so iron delivery continues normally throughout the body. Interfering with that would cause anaemia, which is the kind of side effect that ends a drug programme.</p>
+
+  <p>There is empirical confirmation too. Several viruses independently evolved to enter human cells through the apical domain, and the brain-shuttle drugs that reached the clinic bind there as well, so it is a patch that demonstrably works as an entry handle.</p>
+
+  <h3>How our binder differs from transferrin</h3>
+
+  <p>Transferrin and the molecule we are designing both bind the same receptor, both get swallowed into the same acidifying bubble, and both are perfectly content while sitting outside at pH 7.4. They part company at exactly one moment, which is the point where the endosome turns acidic.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 300" role="img" aria-label="Transferrin and our binder follow an identical path until the endosome acidifies, at which point transferrin holds on and is recycled back to the blood while our binder lets go and its cargo is delivered onward">
+        <defs>
+          <marker id="ar6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- shared stem -->
+        <text class="lbl-s svg-faint" x="10" y="108" letter-spacing="1.2">SHARED PATH</text>
+        <rect x="10" y="123" width="124" height="56" rx="6" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.8"/>
+        <text class="lbl" x="72" y="146" text-anchor="middle" fill="var(--neutral)" font-weight="700">Bound to TfR1</text>
+        <text class="lbl-s" x="72" y="163" text-anchor="middle" fill="var(--neutral)">outside, at pH 7.4</text>
+
+        <line x1="138" y1="151" x2="160" y2="151" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar6)"/>
+
+        <rect x="166" y="123" width="132" height="56" rx="6" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="1.8"/>
+        <text class="lbl" x="232" y="146" text-anchor="middle" fill="var(--acid)" font-weight="700">Swallowed</text>
+        <text class="lbl-s" x="232" y="163" text-anchor="middle" fill="var(--acid)">pH falls to 6.0</text>
+
+        <!-- divergence marker -->
+        <line x1="316" y1="34" x2="316" y2="272" stroke="currentColor" stroke-width="1" stroke-dasharray="4 4" opacity=".45"/>
+        <text class="lbl-s svg-faint" x="316" y="292" text-anchor="middle">they diverge here</text>
+
+        <!-- fork arrows -->
+        <path d="M302 140 C 318 140, 318 76, 332 76" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar6)"/>
+        <path d="M302 162 C 318 162, 318 226, 332 226" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar6)"/>
+
+        <!-- upper branch: transferrin -->
+        <text class="lbl-s svg-muted" x="336" y="28" letter-spacing="1.2" font-weight="700">TRANSFERRIN · the reusable courier</text>
+        <rect x="336" y="46" width="124" height="60" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.6"/>
+        <text class="lbl-b svg-fg" x="398" y="72" text-anchor="middle">Holds on</text>
+        <text class="lbl-s svg-muted" x="398" y="90" text-anchor="middle">grips tighter</text>
+
+        <line x1="464" y1="76" x2="486" y2="76" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar6)"/>
+
+        <rect x="492" y="46" width="138" height="60" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.6"/>
+        <text class="lbl-b svg-fg" x="561" y="72" text-anchor="middle">Recycled</text>
+        <text class="lbl-s svg-muted" x="561" y="90" text-anchor="middle">back out to the blood</text>
+
+        <!-- lower branch: ours -->
+        <rect x="336" y="196" width="124" height="60" rx="6" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="2"/>
+        <text class="lbl-b" x="398" y="222" text-anchor="middle" fill="var(--acid)">Lets go</text>
+        <text class="lbl-s" x="398" y="240" text-anchor="middle" fill="var(--acid)">grip collapses</text>
+
+        <line x1="464" y1="226" x2="486" y2="226" stroke="var(--acid)" stroke-width="1.5" marker-end="url(#ar6)" color="var(--acid)"/>
+
+        <rect x="492" y="196" width="138" height="60" rx="6" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="2"/>
+        <text class="lbl-b" x="561" y="222" text-anchor="middle" fill="var(--acid)">Delivered</text>
+        <text class="lbl-s" x="561" y="240" text-anchor="middle" fill="var(--acid)">cargo continues onward</text>
+
+        <text class="lbl-s svg-muted" x="336" y="276" letter-spacing="1.2" font-weight="700">OUR BINDER · the parcel</text>
+      </svg>
+    </div>
+    <figcaption><b>One shared path, one fork.</b> Everything up to the acidic step is identical, and the entire design question is what happens at that fork. Transferrin tightens its grip and buys itself a ride home; we let go, which is what allows our cargo to be dropped off instead of returned.</figcaption>
+  </figure>
+
+  <p>Laid out plainly, there are three differences, and the second one is the design:</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th></th><th>Transferrin</th><th>Our binder</th></tr></thead>
+    <tbody>
+      <tr><td><b>Where it binds</b></td><td>Helical domain</td><td>Apical domain, to keep clear of the iron site</td></tr>
+      <tr class="hl"><td><b>At pH 6.0</b></td><td>Holds on</td><td><b>Lets go</b></td></tr>
+      <tr><td><b>Where it ends up</b></td><td>Back in the blood, ready to collect more iron</td><td>Dropped off, with its cargo free to continue into the brain</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>The cleanest way to hold the difference in mind is to notice that both molecules release something when the pH drops, but they release different things. Transferrin lets go of its <em>cargo</em> while keeping hold of the <em>receptor</em>, so the iron falls away and transferrin stays attached for the ride home. Our binder does precisely the reverse, letting go of the <em>receptor</em> while keeping hold of its <em>cargo</em>, so that the drug stays with us and we detach from TfR1 together.</p>
+
+  <div class="key">
+    <p>Transferrin is a delivery van that keeps the van and drops the parcel. We are the parcel, and the whole trick is letting go of the van at the right moment.</p>
+  </div>
+
+  <p>One honest caveat belongs here. That releasing a binder inside the endosome improves brain delivery is a solid experimental finding, but the detailed trafficking afterwards, meaning exactly how the released cargo gets routed out of the far side of the cell rather than back the way it came, is still debated. We are copying a result that reliably works rather than a mechanism that has been fully mapped.</p>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <div class="sec-head"><span class="sec-num">07</span><h2>The blood–brain barrier, and why this is worth doing</h2></div>
+
+  <p>The brain is walled off from the rest of the body. Its blood vessels are lined with cells welded together so tightly that no gaps remain between them, and those cells are backed up by pumps that actively eject foreign molecules. The result is the <button class="term" data-t="bbb">blood–brain barrier</button>, and almost nothing crosses it.</p>
+
+  <p>This is the central problem in neurological medicine, because we already have drugs that would treat Alzheimer's, Parkinson's, ALS, Huntington's and a family of inherited metabolic diseases, if only we could get them into the brain. A typical therapeutic antibody reaches roughly <strong>0.1 to 0.3 per cent</strong> of its blood concentration in brain tissue, which is a third of one per cent rather than the thirty per cent that the figure is so easily misread as.</p>
+
+  <h3>The trick is to use the door</h3>
+
+  <p>You cannot break through the barrier, but you can go through a door that is already there. TfR1 is abundant on exactly those blood-vessel cells and it already performs endocytosis professionally, so if you attach your drug to something that binds TfR1, the receptor will carry the whole package across on your behalf: the cell swallows it on the blood side and releases it on the brain side. This is <button class="term" data-t="transcytosis">receptor-mediated transcytosis</button>, known informally as a molecular Trojan horse.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 200" role="img" aria-label="A drug attached to a TfR1 binder is carried through a brain blood vessel cell from the blood side to the brain side, releasing in the acidic compartment on the way">
+        <defs>
+          <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- three zones -->
+        <rect x="0" y="28" width="150" height="124" fill="var(--neutral-w)"/>
+        <rect x="150" y="28" width="340" height="124" fill="var(--surface-2)"/>
+        <rect x="490" y="28" width="150" height="124" fill="var(--neutral-w)"/>
+        <line x1="150" y1="28" x2="150" y2="152" stroke="currentColor" stroke-width="2.6"/>
+        <line x1="490" y1="28" x2="490" y2="152" stroke="currentColor" stroke-width="2.6"/>
+
+        <text class="lbl-s svg-muted" x="12" y="20" font-weight="700">BLOOD</text>
+        <text class="lbl-s svg-faint" x="162" y="20" font-weight="700">BARRIER CELL</text>
+        <text class="lbl-s svg-muted" x="502" y="20" font-weight="700">BRAIN</text>
+
+        <!-- cargo at left -->
+        <g>
+          <circle cx="60" cy="90" r="9" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2"/>
+          <rect x="38" y="104" width="44" height="17" rx="4" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+          <text class="lbl-s svg-fg" x="60" y="116" text-anchor="middle">drug</text>
+          <line x1="60" y1="99" x2="60" y2="104" stroke="currentColor" stroke-width="1.4"/>
+          <text class="lbl-s" x="60" y="68" text-anchor="middle" fill="var(--neutral)" font-weight="700">our binder</text>
+        </g>
+
+        <line x1="96" y1="90" x2="142" y2="90" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar4)"/>
+        <text class="lbl-s svg-faint" x="119" y="80" text-anchor="middle">grabs TfR1</text>
+
+        <!-- inside: acid compartment -->
+        <g>
+          <circle cx="320" cy="90" r="38" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="2.2"/>
+          <text class="lbl-b" x="320" y="86" text-anchor="middle" fill="var(--acid)">pH 6.0</text>
+          <text class="lbl-s" x="320" y="102" text-anchor="middle" fill="var(--acid)" font-weight="700">binder lets go</text>
+        </g>
+        <line x1="190" y1="90" x2="276" y2="90" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar4)"/>
+        <text class="lbl-s svg-faint" x="233" y="80" text-anchor="middle">swallowed</text>
+        <line x1="364" y1="90" x2="450" y2="90" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar4)"/>
+        <text class="lbl-s svg-faint" x="407" y="80" text-anchor="middle">carried across</text>
+
+        <!-- cargo at right -->
+        <g>
+          <rect x="520" y="82" width="44" height="17" rx="4" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+          <text class="lbl-s svg-fg" x="542" y="94" text-anchor="middle">drug</text>
+          <text class="lbl-s svg-muted" x="542" y="120" text-anchor="middle">delivered, free</text>
+        </g>
+        <line x1="496" y1="90" x2="512" y2="90" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar4)"/>
+
+        <text class="lbl-s svg-faint" x="320" y="176" text-anchor="middle">Releasing inside is what frees the cargo to continue into the brain instead of riding the receptor back to the blood.</text>
+      </svg>
+    </div>
+    <figcaption><b>Receptor-mediated transcytosis.</b> This is not an exploit but a legitimate, documented transport route, which we are calling with our own cargo as the argument.</figcaption>
+  </figure>
+
+  <p>This is not speculative. Real approved drugs work this way:</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Drug</th><th>What it is</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><b>Pabinafusp alfa</b><br><span style="color:var(--fg-faint);font-size:13px">JCR Pharmaceuticals</span></td><td>Anti-TfR1 antibody fused to a missing enzyme, for Hunter syndrome</td><td>Approved in Japan since ~2021</td></tr>
+      <tr><td><b>Tividenofusp alfa</b><br><span style="color:var(--fg-faint);font-size:13px">Denali, DNL310</span></td><td>Enzyme on a TfR1-binding transport vehicle</td><td>Reported FDA accelerated approval, March 2026</td></tr>
+      <tr><td><b>Trontinemab</b><br><span style="color:var(--fg-faint);font-size:13px">Roche</span></td><td>Alzheimer's antibody on a TfR1 shuttle</td><td>Phase III</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>The affinity paradox</h3>
+
+  <p>Between roughly 2011 and 2014, groups at Genentech and at Roche independently discovered something counterintuitive that went on to shape this whole competition: <strong>anti-TfR1 antibodies that bound more tightly ended up delivering less drug to the brain, not more.</strong></p>
+
+  <p>The reason is straightforward once you see it. A very tight binder clamps onto TfR1 and never lets go, so although it is swallowed into the endosome exactly as intended, it then remains stuck to the receptor and shares whatever fate the receptor has, either riding back out to the blood or being dragged onward to the lysosome and destroyed. If you grab the doorman too hard, you go wherever the doorman goes.</p>
+
+  <p>The field converged on three fixes: lower the affinity deliberately, bind with one arm rather than two so that receptors are not stapled together, and <strong>release in response to pH</strong>. That last fix is where our third requirement comes from.</p>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="s8">
+  <div class="sec-head"><span class="sec-num">08</span><h2>The three requirements, decoded</h2></div>
+
+  <p>Everything is now in place to read the competition brief for what it really is, which is a list of lessons the industry learned the expensive way.</p>
+
+  <h3>① Bind human TfR1 at pH 7.4</h3>
+  <p>This is the baseline, and it requires a K<sub>D</sub> below 1 µM. We aim at the apical domain so that we do not block iron transport, since doing that across the body would cause anaemia.</p>
+
+  <h3>② Also bind mouse TfR1 at pH 7.4</h3>
+  <p>This is a drug-development requirement rather than a biological one. Before any drug reaches humans it has to be tested in mice, but a binder that recognises only the human version of the receptor cannot be tested that way at all. Teams currently work around the problem either by building a separate mouse-only version of the drug, which means they are no longer testing the thing they intend to sell, or by genetically engineering mice to carry the human receptor instead. Both routes are slow and expensive.</p>
+  <p>The difficulty is that the apical patch <strong>differs at six of its nine key positions</strong> between human and mouse, so the two surfaces genuinely do not look alike, which incidentally is also why certain human-infecting viruses cannot infect mice. What we need is a binding mode that grips the three shared positions firmly while tolerating the six that differ.</p>
+
+  <h3>③ Bind at pH 7.4, with no detectable binding at pH 6.0</h3>
+  <p>This is the endosomal release described in part 7, and from part 4 you already know that there is exactly one way to achieve it, which is to <strong>put histidines into the contact surface.</strong> At pH 7.4 those histidines are neutral and participate in binding like any other residue, but at pH 6.0 they grab protons and turn positive, and by rule 2 from part 3 a buried positive charge at a contact surface is both expensive and disruptive, so the surface comes apart.</p>
+
+  <div class="key acid">
+    <p>Two placement rules follow directly from this:</p>
+    <p><strong>Count.</strong> A single histidine buys roughly a fivefold to tenfold weakening, whereas no detectable binding needs a hundredfold or more, so plan on two to four of them, or on one placed next to an existing positive side chain so that protonation creates direct repulsion.</p>
+    <p><strong>Position.</strong> Where the histidines sit matters far more than how many there are. One at the rim of the contact surface achieves nothing at all, one buried in the centre achieves everything, and one anywhere else on the protein is simply an ordinary surface residue.</p>
+  </div>
+
+  <p>This is established industrial technique rather than a guess, since engineering histidines into antibodies to make them pH-sensitive is what produced the approved drug satralizumab, among others.</p>
+
+  <h3>The requirements fight each other</h3>
+
+  <p>This is what makes the problem genuinely hard rather than merely laborious. The strongest protein contact surfaces are large, greasy, deeply buried and cooperative, and that is precisely the kind of surface which one extra positive charge <em>cannot</em> break.</p>
+
+  <div class="key">
+    <p>Requirements ① and ③ therefore pull in opposite directions. What we need is a contact surface that is <strong>marginal by construction</strong>, strong enough at pH 7.4 to beat 1 µM and yet fragile enough that protonating a single histidine demolishes it, and the band of designs satisfying both conditions at once is narrow.</p>
+    <p>Requirement ② then further constrains where on the surface we are permitted to bind at all, so the region we are searching is the intersection of all three.</p>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="s9">
+  <div class="sec-head"><span class="sec-num">09</span><h2>The computational problem</h2></div>
+
+  <p>This part assumes programming background rather than biology.</p>
+
+  <h3>An inverse problem in an absurd space</h3>
+
+  <p>The forward problem of going from sequence to structure is essentially solved, and AlphaFold is what solved it. The <strong>inverse</strong> problem is design: given a desired function, find a sequence that delivers it. For a binder of 100 residues the search space is 20<sup>100</sup>, or roughly 10<sup>130</sup>, which rules out enumeration and exhaustive search entirely. What you need instead is either a learned generative prior that samples only plausible proteins, or gradient descent through a differentiable oracle.</p>
+
+  <h3>The pipeline</h3>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 240" role="img" aria-label="Design pipeline: a generator proposes binder backbones against the target, sequences are designed, structure predictors score them, and only the wet lab provides ground truth on twenty designs">
+        <defs>
+          <marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <g>
+          <rect x="10" y="56" width="112" height="56" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+          <text class="lbl-b svg-fg" x="66" y="80" text-anchor="middle">Generate</text>
+          <text class="lbl-s svg-muted" x="66" y="96" text-anchor="middle">RFdiffusion</text>
+          <text class="lbl-s svg-faint" x="66" y="130" text-anchor="middle">~10⁴ backbones</text>
+          <text class="lbl-s svg-faint" x="66" y="143" text-anchor="middle">against the target</text>
+        </g>
+        <line x1="128" y1="84" x2="156" y2="84" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/>
+
+        <g>
+          <rect x="162" y="56" width="112" height="56" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
+          <text class="lbl-b svg-fg" x="218" y="80" text-anchor="middle">Sequence</text>
+          <text class="lbl-s svg-muted" x="218" y="96" text-anchor="middle">ProteinMPNN</text>
+          <text class="lbl-s svg-faint" x="218" y="130" text-anchor="middle">pick residues to</text>
+          <text class="lbl-s svg-faint" x="218" y="143" text-anchor="middle">fit each backbone</text>
+        </g>
+        <line x1="280" y1="84" x2="308" y2="84" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/>
+
+        <g>
+          <rect x="314" y="40" width="130" height="88" rx="6" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.8"/>
+          <text class="lbl-b" x="379" y="62" text-anchor="middle" fill="var(--neutral)">Score</text>
+          <text class="lbl-s svg-muted" x="379" y="80" text-anchor="middle">AlphaFold2</text>
+          <text class="lbl-s svg-muted" x="379" y="94" text-anchor="middle">Boltz-2</text>
+          <text class="lbl-s svg-muted" x="379" y="108" text-anchor="middle">Rosetta energy</text>
+          <text class="lbl-s" x="379" y="146" text-anchor="middle" fill="var(--neutral)" font-weight="700">cheap surrogate oracles</text>
+          <text class="lbl-s svg-faint" x="379" y="159" text-anchor="middle">these are also the fitness function</text>
+        </g>
+        <line x1="450" y1="84" x2="478" y2="84" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"/>
+        <text class="lbl-s svg-faint" x="464" y="74" text-anchor="middle">top 20</text>
+
+        <g>
+          <rect x="484" y="56" width="112" height="56" rx="6" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="1.8"/>
+          <text class="lbl-b" x="540" y="80" text-anchor="middle" fill="var(--acid)">Wet lab</text>
+          <text class="lbl-s" x="540" y="96" text-anchor="middle" fill="var(--acid)">ground truth</text>
+          <text class="lbl-s svg-faint" x="540" y="130" text-anchor="middle">one batch, no</text>
+          <text class="lbl-s svg-faint" x="540" y="143" text-anchor="middle">feedback round</text>
+        </g>
+
+        <!-- pH callout -->
+        <rect x="314" y="184" width="130" height="42" rx="6" fill="none" stroke="var(--acid)" stroke-width="1.6" stroke-dasharray="5 4"/>
+        <text class="lbl-s" x="379" y="202" text-anchor="middle" fill="var(--acid)" font-weight="700">pH is invisible here</text>
+        <text class="lbl-s svg-muted" x="379" y="216" text-anchor="middle">no model represents it</text>
+        <line x1="379" y1="164" x2="379" y2="182" stroke="var(--acid)" stroke-width="1.4" stroke-dasharray="3 3"/>
+      </svg>
+    </div>
+    <figcaption><b>Everything before the wet lab is a guess scored by another guess.</b> The scoring models are cheap and fast, which is why we can afford 10<sup>4</sup> candidates — and they are also what we optimise against, which is the central danger.</figcaption>
+  </figure>
+
+  <h3>The oracle problem</h3>
+
+  <p>We have no ground truth of any kind until the lab reports back, which means that <strong>our filter is also our fitness function, and we optimise against it hard.</strong> Two things go wrong as a result:</p>
+
+  <ul>
+    <li><strong>Adversarial examples.</strong> These are designs that score 0.95 on AlphaFold's confidence metrics and yet bind nothing at all. The danger becomes acute if you optimise <em>through</em> AlphaFold and then score <em>with</em> AlphaFold, because at that point what you have built is an adversarial attack on AlphaFold which you have then labelled a drug candidate.</li>
+    <li><strong>Distribution shift.</strong> AlphaFold was trained on natural protein complexes, whereas designed binders are out of distribution, so its confidence scores are least reliable in exactly the regime where we need them most.</li>
+  </ul>
+
+  <p>Every available mitigation amounts to the same principle, which is to <strong>make the failure modes uncorrelated.</strong> That means scoring with a model that was trained differently, cross-checking against physics-based energy calculations that carry a completely different inductive bias, and using protocols designed to catch the designs that a model can only find when it has been handed the answer in advance.</p>
+
+  <p>For calibration, published de novo binder campaigns typically confirm somewhere between <strong>0.1 and a few per cent</strong> of their designs experimentally, so most of what we make will not work, and that is entirely normal.</p>
+
+  <h3>One requirement is outside every model's vocabulary</h3>
+
+  <div class="key acid">
+    <p>Not one of RFdiffusion, AlphaFold, ProteinMPNN or Boltz <strong>represents protonation state, pKa or explicit water,</strong> and the structures in the Protein Data Bank that trained them carry no pH information in any form those models consume.</p>
+    <p>The third requirement therefore falls outside the hypothesis class of every modern design tool, which means we cannot screen for it at all. It has to be engineered by hand, sanity-checked with older pKa-prediction tools, and then tested blind.</p>
+  </div>
+
+  <p>The general lesson travels well beyond biology, and it is that a learned oracle is only defined over the variables it was trained to see. Ask it about anything outside that set and it will answer confidently and meaninglessly.</p>
+
+  <h3>Twenty shots, no feedback</h3>
+
+  <p>The wet lab is the expensive true oracle, and everything upstream of it is a cheap surrogate. We get one batch of 20 designs tested with no second round, which makes the final step a single-shot batch active-learning problem, and in that setting the optimal policy is <em>not</em> simply to sort by predicted score and take the top 20.</p>
+
+  <p>Twenty near-identical variants of a single design return roughly one bit of information, namely whether that one design worked, whereas twenty genuinely distinct designs return something closer to twenty bits. Given three requirements and a mechanistic hypothesis that still needs testing, the right play is a <strong>portfolio</strong> of several independent designs, each carrying a short ladder of histidine variants, so that whatever comes back teaches us both which designs bind and whether the pH strategy works at all.</p>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="s10" class="gl">
+  <div class="sec-head"><span class="sec-num">10</span><h2>Glossary</h2></div>
+  <p>Every term introduced above, in one place.</p>
+  <div class="gl-list" id="gl"></div>
+</section>
+
+<footer>
+  <p><b>How to help.</b> The useful background here is not biology but pipeline engineering, GPU orchestration and careful evaluation design. If you can run batch jobs on rented GPUs, reason about overfitting to a scoring function, or build the bookkeeping that tracks ten thousand candidates down to twenty, then you can contribute from day one.</p>
+  <p>Numbers and clinical statuses here are drawn from published literature and secondary sources; the FDA approval status of tividenofusp alfa in particular is worth confirming against FDA's own announcement before relying on it.</p>
+</footer>
+
+</main>
+</div>
+</div>
+
+<script>
+const TERMS = {
+  amino:      ["Amino acid", "One of 20 standard building blocks. Proteins are chains of them."],
+  apical:     ["Apical domain", "The outward-pointing domain of TfR1, with no known natural partner. Our target patch."],
+  bbb:        ["Blood–brain barrier", "Tightly sealed brain blood vessels that block almost everything from entering the brain."],
+  denovo:     ["De novo", "Designed from scratch rather than derived from an existing protein. Required by the competition rules."],
+  domain:     ["Domain", "A chunk of a protein that folds as its own semi-independent unit. Effectively a module."],
+  ectodomain: ["Ectodomain", "The portion of a membrane protein that sits outside the cell. For TfR1, residues 121–760."],
+  endocytosis:["Endocytosis", "The cell membrane dimpling inward to swallow something into a sealed internal bubble."],
+  endosome:   ["Endosome", "That bubble. It is acidified to about pH 6.0 shortly after it forms."],
+  epitope:    ["Epitope", "The specific patch on a target protein that a binder touches."],
+  fold:       ["Fold", "The specific 3D shape a sequence adopts. Determined by the sequence; determines the function."],
+  helix:      ["Alpha-helix", "A spiral coil, one of the two common local shapes a stretch of protein chain settles into. The helical domain of TfR1 is named for being built mostly from these."],
+  sheet:      ["Beta-sheet", "A flat zigzag ribbon that lines up alongside its neighbours. The other common local shape, alongside the alpha-helix."],
+  protease:   ["Protease-like domain", "A domain of TfR1 named for resembling a protease, an enzyme that cuts proteins, although it has no such activity. Structural only."],
+  histidine:  ["Histidine", "The one amino acid whose pKa (~6.0–6.5) falls between pH 7.4 and 6.0, making it the only available pH switch."],
+  homodimer:  ["Homodimer", "Two identical protein copies bound together as one working unit. TfR1 is one."],
+  hotspot:    ["Hotspot", "A residue on the target that contributes disproportionately to binding. Used to aim design tools."],
+  hydrophobic:["Hydrophobic", "“Water-fearing”. Greasy side chains that cluster away from water."],
+  kd:         ["Kᴅ (dissociation constant)", "Stickiness, measured as a concentration. Lower means tighter. nM is strong; µM is weak."],
+  lysosome:   ["Lysosome", "The cell's acidic (pH ~5) disposal compartment, where unwanted cargo is destroyed."],
+  membrane:   ["Membrane", "The greasy sheet enclosing a cell. Impermeable to most molecules."],
+  ph:         ["pH", "A measure of how many free protons are present. Lower means more acidic. Each unit is a factor of 10. Blood is 7.4."],
+  pka:        ["pKa", "The pH at which half the copies of a given side chain are holding a proton. Its tipping point."],
+  protein:    ["Protein", "A chain of amino acids that folds into a specific 3D shape. The shape determines what it does."],
+  protonated: ["Protonated", "Currently holding a grabbed proton, and therefore one unit more positively charged."],
+  proton:     ["Proton (H⁺)", "A bare hydrogen nucleus — a free positive charge drifting in water."],
+  receptor:   ["Receptor", "A protein spanning the cell membrane that grabs specific molecules outside and signals inside."],
+  residue:    ["Residue", "One amino acid at one numbered position in a chain."],
+  sidechain:  ["Side chain", "The variable part of an amino acid that sticks out sideways and does the chemistry."],
+  tfr1:       ["TfR1 / CD71", "Transferrin receptor 1. Our target. Imports iron, and is abundant on brain blood vessels."],
+  transcytosis:["Receptor-mediated transcytosis", "Using a receptor to ferry cargo all the way through a cell, in one side and out the other. The brain-delivery trick."],
+  transferrin:["Transferrin", "The blood protein that carries iron and is TfR1's natural partner."]
+};
+
+/* glossary list */
+(function () {
+  const gl = document.getElementById('gl');
+  Object.keys(TERMS).sort((a, b) => TERMS[a][0].localeCompare(TERMS[b][0])).forEach(k => {
+    const d = document.createElement('div');
+    d.className = 'gl-item';
+    d.innerHTML = '<div class="gl-t"></div><div class="gl-d"></div>';
+    d.firstChild.textContent = TERMS[k][0];
+    d.lastChild.textContent = TERMS[k][1];
+    gl.appendChild(d);
+  });
+})();
+
+/* term popovers */
+(function () {
+  let pop = null;
+  function close() { if (pop) { pop.remove(); pop = null; } }
+  document.addEventListener('click', e => {
+    const t = e.target.closest('.term');
+    close();
+    if (!t) return;
+    const d = TERMS[t.dataset.t];
+    if (!d) return;
+    pop = document.createElement('div');
+    pop.id = 'pop';
+    const b = document.createElement('b');
+    b.textContent = d[0];
+    pop.appendChild(b);
+    pop.appendChild(document.createTextNode(d[1]));
+    document.body.appendChild(pop);
+    const r = t.getBoundingClientRect(), pr = pop.getBoundingClientRect();
+    let left = r.left + window.scrollX;
+    left = Math.min(left, window.innerWidth - pr.width - 14);
+    pop.style.left = Math.max(10, left) + 'px';
+    pop.style.top = (r.bottom + window.scrollY + 7) + 'px';
+    e.stopPropagation();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  window.addEventListener('scroll', close, { passive: true });
+})();
+
+/* contents + scrollspy */
+(function () {
+  const toc = document.getElementById('toc');
+  const secs = [...document.querySelectorAll('main section')];
+  const links = secs.map(s => {
+    const n = s.querySelector('.sec-num').textContent;
+    const h = s.querySelector('h2').textContent;
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = '#' + s.id;
+    a.innerHTML = '<span class="n"></span><span class="t"></span>';
+    a.querySelector('.n').textContent = n;
+    a.querySelector('.t').textContent = h;
+    li.appendChild(a); toc.appendChild(li);
+    return a;
+  });
+  const io = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (e.isIntersecting) {
+        const i = secs.indexOf(e.target);
+        links.forEach((a, j) => a.classList.toggle('on', i === j));
+      }
+    });
+  }, { rootMargin: '-10% 0px -75% 0px' });
+  secs.forEach(s => io.observe(s));
+})();
+
+/* pH simulator */
+(function () {
+  const ph = document.getElementById('ph'), pka = document.getElementById('pka');
+  const phv = document.getElementById('phv'), pkav = document.getElementById('pkav');
+  const frac = document.getElementById('frac'), rel = document.getElementById('rel');
+  const verdict = document.getElementById('verdict');
+  const bgroup = document.getElementById('bgroup');
+  const hiscirc = document.getElementById('hiscirc'), histext = document.getElementById('histext');
+  const repel = document.getElementById('repel');
+
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  function update() {
+    const P = parseFloat(ph.value), K = parseFloat(pka.value);
+    const f = 1 / (1 + Math.pow(10, P - K));          // fraction protonated
+    phv.textContent = P.toFixed(2);
+    pkav.textContent = K.toFixed(2);
+    frac.textContent = Math.round(f * 100) + '%';
+    rel.textContent = Math.pow(10, 7.4 - P).toFixed(1) + '×';
+
+    const acid = css('--acid'), neutral = css('--neutral');
+    const charged = f > 0.5;
+
+    hiscirc.setAttribute('stroke', charged ? acid : neutral);
+    histext.setAttribute('fill', charged ? acid : neutral);
+    histext.textContent = charged ? 'H⁺' : 'H';
+    repel.setAttribute('opacity', charged ? '1' : '0');
+
+    // binder slides away in proportion to how protonated the histidine is
+    const shift = Math.max(0, (f - 0.35)) * 60;
+    bgroup.setAttribute('transform', 'translate(' + shift.toFixed(1) + ',0)');
+
+    if (charged) {
+      verdict.className = 'verdict released';
+      verdict.textContent = 'Histidine is positively charged — buried charge repels, interface breaks, binder releases';
+    } else {
+      verdict.className = 'verdict bound';
+      verdict.textContent = 'Neutral histidine — interface intact, binder holds on';
+    }
+  }
+  ph.addEventListener('input', update);
+  pka.addEventListener('input', update);
+  update();
+})();
+</script>
+
+</body>
+</html>

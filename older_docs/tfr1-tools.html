@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tools Considered</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Spectral:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    /* Document skeleton: matches what the Artifact host injects, so the local
+       file renders identically to the published page. */
+    :root {
+      color-scheme: light;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    body { margin: 0; font: 14px system-ui, -apple-system, sans-serif; }
+    img { max-width: 100%; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<style>
+/* Same design system as the primer: teal = pH 7.4 / cheap / safe,
+   amber = pH 6.0 / expensive / risky. Single ~68ch column, sticky index. */
+:root {
+  --bg:        #f4f6f7;
+  --surface:   #ffffff;
+  --surface-2: #eceff1;
+  --fg:        #14181d;
+  --fg-muted:  #58636e;
+  --fg-faint:  #8a949e;
+  --rule:      #d9dee3;
+  --rule-soft: #e7ebee;
+
+  --neutral:   #0b766c;
+  --neutral-w: #dbeeeb;
+  --acid:      #b4460d;
+  --acid-w:    #fae7d9;
+  --accent:    var(--neutral);
+
+  --font-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Spectral', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --measure: 68ch;
+  --gutter-l: max(20px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(20px, env(safe-area-inset-right, 0px));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:        #0e1216;
+    --surface:   #161b20;
+    --surface-2: #1d242a;
+    --fg:        #e4e8eb;
+    --fg-muted:  #96a1ab;
+    --fg-faint:  #6b757f;
+    --rule:      #2a323a;
+    --rule-soft: #212830;
+    --neutral:   #34d0bd;
+    --neutral-w: #11322f;
+    --acid:      #f59354;
+    --acid-w:    #3a2113;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:        #0e1216;
+  --surface:   #161b20;
+  --surface-2: #1d242a;
+  --fg:        #e4e8eb;
+  --fg-muted:  #96a1ab;
+  --fg-faint:  #6b757f;
+  --rule:      #2a323a;
+  --rule-soft: #212830;
+  --neutral:   #34d0bd;
+  --neutral-w: #11322f;
+  --acid:      #f59354;
+  --acid-w:    #3a2113;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.65;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- shell ---------- */
+.shell {
+  display: grid; grid-template-columns: 1fr; gap: 0;
+  max-width: 1180px; margin: 0 auto;
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r);
+}
+@media (min-width: 1000px) {
+  .shell { grid-template-columns: 220px minmax(0, 1fr); gap: 56px; }
+}
+
+/* ---------- index ---------- */
+.index { display: none; }
+@media (min-width: 1000px) {
+  .index {
+    display: block; position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 28px);
+    align-self: start; max-height: calc(100vh - 80px); overflow-y: auto;
+    padding-block: 28px;
+    font-family: var(--font-display); font-size: 12.5px; line-height: 1.45;
+  }
+}
+.index-label {
+  font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--fg-faint); font-weight: 600; margin-bottom: 14px;
+}
+.index ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.index a {
+  display: grid; grid-template-columns: 22px 1fr; gap: 6px;
+  color: var(--fg-muted); text-decoration: none;
+  padding: 5px 8px 5px 0; border-left: 2px solid transparent; padding-left: 10px;
+  transition: color .15s, border-color .15s;
+}
+.index a:hover { color: var(--fg); }
+.index a .n { color: var(--fg-faint); font-variant-numeric: tabular-nums; }
+.index a.on { color: var(--fg); border-left-color: var(--accent); font-weight: 600; }
+.index a.on .n { color: var(--accent); }
+
+/* ---------- masthead ---------- */
+.masthead { padding-block: 56px 36px; border-bottom: 1px solid var(--rule); max-width: var(--measure); }
+.eyebrow {
+  font-family: var(--font-display); font-size: 11px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 18px;
+}
+h1 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(34px, 6.5vw, 54px); line-height: 1.03;
+  letter-spacing: -.022em; margin: 0 0 20px; text-wrap: balance;
+}
+.standfirst { font-size: 20px; line-height: 1.55; color: var(--fg-muted); margin: 0; }
+.meta {
+  margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px 22px;
+  font-family: var(--font-display); font-size: 12px; color: var(--fg-faint);
+}
+.meta b { color: var(--fg-muted); font-weight: 600; }
+
+/* ---------- content ---------- */
+main { padding-bottom: 100px; }
+section { max-width: var(--measure); padding-block: 48px 8px; scroll-margin-top: 24px; }
+section + section { border-top: 1px solid var(--rule-soft); }
+
+.sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+.sec-num {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  color: var(--accent); letter-spacing: .04em; padding-top: 6px;
+}
+h2 {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(25px, 4vw, 33px); line-height: 1.15;
+  letter-spacing: -.016em; margin: 0; text-wrap: balance;
+}
+h3 {
+  font-family: var(--font-display); font-weight: 600;
+  font-size: 18px; line-height: 1.3; letter-spacing: -.005em;
+  margin: 38px 0 2px;
+}
+p { margin: 16px 0; }
+a { color: var(--accent); }
+strong { font-weight: 600; }
+em { font-style: italic; }
+code, .mono { font-family: var(--font-mono); font-size: .86em; }
+code { background: var(--surface-2); padding: 1px 5px; border-radius: 3px; color: var(--fg); }
+ul, ol { margin: 16px 0; padding-left: 22px; }
+li { margin: 7px 0; padding-left: 3px; }
+li::marker { color: var(--fg-faint); }
+
+/* ---------- key statement ---------- */
+.key {
+  margin: 30px 0; padding: 20px 24px;
+  background: var(--surface); border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0; font-size: 18px; line-height: 1.55;
+}
+.key p { margin: 0; }
+.key p + p { margin-top: 12px; }
+.key.acid { border-left-color: var(--acid); }
+
+/* ---------- aside ---------- */
+.cs {
+  margin: 26px 0; padding: 16px 20px;
+  background: var(--surface-2); border-radius: 6px;
+  font-size: 15.5px; line-height: 1.55; color: var(--fg-muted);
+}
+.cs p { margin: 0; }
+.cs p + p { margin-top: 10px; }
+.cs .tag {
+  display: block; font-family: var(--font-display); font-size: 10.5px;
+  font-weight: 600; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--fg-faint); margin-bottom: 7px;
+}
+
+/* ---------- tables ---------- */
+.tw { overflow-x: auto; margin: 26px 0; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 420px; }
+th {
+  font-family: var(--font-display); font-size: 11px; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--fg-faint);
+  text-align: left; padding: 0 16px 9px 0; border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+td { padding: 11px 16px 11px 0; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+td:last-child, th:last-child { padding-right: 0; }
+tbody tr:last-child td { border-bottom: none; }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.hl td { background: var(--neutral-w); }
+tr.hl td:first-child { font-weight: 600; }
+tr.warn td { background: var(--acid-w); }
+td.pick { font-weight: 600; color: var(--neutral); }
+td.drop { color: var(--fg-faint); }
+
+/* ---------- figures ---------- */
+figure { margin: 34px 0; }
+figure svg { display: block; width: 100%; max-width: 100%; height: auto; }
+.figbox { background: var(--surface); border: 1px solid var(--rule-soft); border-radius: 8px; padding: 22px 20px; }
+figcaption {
+  margin-top: 13px; font-size: 14px; line-height: 1.5; color: var(--fg-muted);
+  font-family: var(--font-display); font-weight: 500;
+}
+figcaption b { color: var(--fg); font-weight: 600; }
+.svg-fg { fill: var(--fg); }
+.svg-muted { fill: var(--fg-muted); }
+.svg-faint { fill: var(--fg-faint); }
+text { font-family: var(--font-display); }
+.lbl { font-size: 12px; font-weight: 500; }
+.lbl-s { font-size: 10.5px; font-weight: 500; }
+.lbl-b { font-size: 12px; font-weight: 700; }
+.lbl-mono { font-family: var(--font-mono); font-size: 11px; }
+
+/* ---------- decision card ---------- */
+.dec {
+  margin: 30px 0; border: 1px solid var(--rule); border-radius: 8px;
+  background: var(--surface); overflow: hidden;
+}
+.dec-head {
+  padding: 13px 20px; border-bottom: 1px solid var(--rule-soft);
+  font-family: var(--font-display); font-size: 11px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--fg-faint);
+}
+.dec-body { padding: 18px 20px; }
+.dec-body p { margin: 0; }
+.dec-body p + p { margin-top: 12px; }
+.dec-verdict {
+  display: inline-block; margin-bottom: 11px; padding: 4px 11px;
+  background: var(--neutral-w); color: var(--neutral); border-radius: 4px;
+  font-family: var(--font-display); font-size: 12.5px; font-weight: 700;
+}
+
+/* ---------- stage list ---------- */
+.stages { display: grid; gap: 0; margin: 28px 0; }
+.stage {
+  display: grid; gap: 3px 18px; padding: 15px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+@media (min-width: 620px) { .stage { grid-template-columns: 30px 1fr 74px; } }
+.stage-n { font-family: var(--font-mono); font-size: 13px; color: var(--accent); font-weight: 500; }
+.stage-t { font-family: var(--font-display); font-weight: 600; font-size: 15.5px; }
+.stage-d { font-size: 15px; color: var(--fg-muted); line-height: 1.5; grid-column: 2; }
+.chip {
+  justify-self: start; align-self: start; padding: 2px 8px; border-radius: 4px;
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+}
+@media (min-width: 620px) { .chip { justify-self: end; } }
+.chip.gpu { background: var(--acid-w); color: var(--acid); }
+.chip.cpu { background: var(--neutral-w); color: var(--neutral); }
+
+/* ---------- checkpoint ---------- */
+.ckpt { margin: 34px 0 10px; padding: 18px 22px; border: 1px dashed var(--rule); border-radius: 8px; background: var(--surface); }
+.ckpt .tag {
+  font-family: var(--font-display); font-size: 10.5px; font-weight: 600;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--accent);
+  display: block; margin-bottom: 9px;
+}
+.ckpt ul { margin: 0; padding-left: 20px; font-size: 15.5px; }
+.ckpt li { margin: 5px 0; }
+
+/* ---------- footer ---------- */
+footer {
+  max-width: var(--measure); padding-block: 40px 70px;
+  border-top: 1px solid var(--rule); font-size: 14.5px; color: var(--fg-muted);
+}
+footer p { margin: 10px 0; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+<style>
+/* ---------- page-specific: tool verdicts ---------- */
+.vb {
+  display: inline-block; padding: 3px 10px; border-radius: 4px;
+  font-family: var(--font-display); font-size: 11.5px; font-weight: 700;
+  letter-spacing: .04em; white-space: nowrap;
+}
+.vb.adopt { background: var(--neutral); color: var(--surface); }
+.vb.maybe { background: var(--neutral-w); color: var(--neutral); }
+.vb.hold  { background: var(--surface-2); color: var(--fg-muted); }
+.vb.no    { background: var(--acid-w); color: var(--acid); }
+.vb.unk   { background: transparent; color: var(--fg-faint); border: 1px dashed var(--rule); }
+
+/* tool header block */
+.tool-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+  margin: 4px 0 2px;
+}
+.tool-sub {
+  font-family: var(--font-display); font-size: 13px; color: var(--fg-faint);
+  margin: 0 0 4px;
+}
+.tool-sub a { color: var(--fg-muted); }
+
+/* fact strip */
+.facts {
+  display: grid; gap: 1px; margin: 24px 0;
+  background: var(--rule-soft); border: 1px solid var(--rule-soft);
+  border-radius: 7px; overflow: hidden;
+}
+@media (min-width: 560px) { .facts { grid-template-columns: repeat(3, 1fr); } }
+.fact { background: var(--surface); padding: 12px 14px; }
+.fact .k {
+  font-family: var(--font-display); font-size: 10px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--fg-faint);
+  display: block; margin-bottom: 4px;
+}
+.fact .v { font-family: var(--font-display); font-size: 14px; font-weight: 600; line-height: 1.35; }
+.fact .v.warn { color: var(--acid); }
+.fact .v.good { color: var(--neutral); }
+
+/* pros / cons */
+.pc { display: grid; gap: 18px; margin: 26px 0; }
+@media (min-width: 620px) { .pc { grid-template-columns: 1fr 1fr; } }
+.pc-col { padding: 15px 18px; border-radius: 7px; }
+.pc-col.for { background: var(--neutral-w); }
+.pc-col.against { background: var(--acid-w); }
+.pc-col .tag {
+  display: block; font-family: var(--font-display); font-size: 10.5px;
+  font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.pc-col.for .tag { color: var(--neutral); }
+.pc-col.against .tag { color: var(--acid); }
+.pc-col ul { margin: 0; padding-left: 18px; font-size: 15px; line-height: 1.5; }
+.pc-col li { margin: 6px 0; }
+.pc-col.for li::marker { color: var(--neutral); }
+.pc-col.against li::marker { color: var(--acid); }
+
+/* action list */
+.acts { counter-reset: a; margin: 28px 0; display: grid; gap: 0; }
+.act {
+  display: grid; gap: 2px 16px; padding: 14px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  grid-template-columns: 26px 1fr;
+}
+.act::before {
+  counter-increment: a; content: counter(a);
+  font-family: var(--font-mono); font-size: 13px; color: var(--accent); font-weight: 500;
+}
+.act-t { font-family: var(--font-display); font-weight: 600; font-size: 15.5px; }
+.act-d { font-size: 15px; color: var(--fg-muted); line-height: 1.5; grid-column: 2; }
+.act-when {
+  grid-column: 2; margin-top: 5px;
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--fg-faint);
+}
+</style>
+
+<div class="shell">
+
+<nav class="index" aria-label="Sections">
+  <div class="index-label">Contents</div>
+  <ol id="toc"></ol>
+</nav>
+
+<div>
+
+<header class="masthead">
+  <div class="eyebrow">Project plan · Alternatives considered</div>
+  <h1>Tools Considered</h1>
+  <p class="standfirst">Four tools evaluated against the eight-day plan. One of them reopens a decision already made, one attacks the plan's largest failure mode, one is the strongest science and the wrong week, and one I could not verify exists as named.</p>
+  <div class="meta">
+    <span><b>Companion to</b> &nbsp;<a href="tfr1-architecture.html">The TfR1 Plan</a></span>
+    <span><b>Researched</b> &nbsp;Sat 24 October 2026</span>
+    <span><b>Budget remaining</b> &nbsp;8 days, ~$200</span>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ 0 ============ -->
+<section id="s0">
+  <div class="sec-head"><span class="sec-num">00</span><h2>Verdicts</h2></div>
+
+  <p>All four are real and all four are good. That is the problem rather than the result, because section 10 of the plan names tool creep as a top-five risk and adopting several of these would be exactly that. The question is not which are worth using in general, but which earn a slot in eight part-time days.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Tool</th><th>In one line</th><th>Where it would act</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>ArcRefine</strong></td>
+        <td>Improves a binder's sequence while holding its pose</td>
+        <td>Stage 5 — repair broken His variants</td>
+        <td><span class="vb maybe">Friday, 2 hr</span></td>
+      </tr>
+      <tr class="hl">
+        <td><strong>BioNeMo Agent Toolkit</strong></td>
+        <td>Agent skills wrapping NVIDIA's bio models</td>
+        <td>Stages 2–4 — could replace the engine</td>
+        <td><span class="vb adopt">Spike today</span></td>
+      </tr>
+      <tr>
+        <td><strong>RFD4-Proteina</strong></td>
+        <td>IPD + NVIDIA design model with reward-guided search</td>
+        <td>Stage 2 — with a custom objective</td>
+        <td><span class="vb no">Version two</span></td>
+      </tr>
+      <tr>
+        <td><strong>Proteina-Complexa</strong></td>
+        <td>Atomistic binder co-design, ICLR 2026 oral</td>
+        <td>Stage 2 — direct BindCraft replacement</td>
+        <td><span class="vb hold">Reserve</span></td>
+      </tr>
+      <tr>
+        <td><strong>…-ISMB2026</strong></td>
+        <td>Could not confirm this exists as named</td>
+        <td>—</td>
+        <td><span class="vb unk">Unverified</span></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 300" role="img" aria-label="The six-stage pipeline with each candidate tool shown attaching at the stage it would replace or augment: three tools compete for the generation stage while ArcRefine attaches to pH engineering">
+        <defs>
+          <marker id="tk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+          <marker id="tk-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--neutral)"/>
+          </marker>
+        </defs>
+
+        <!-- existing pipeline spine -->
+        <text class="lbl-s svg-faint" x="20" y="186">PLAN</text>
+        <g>
+          <rect x="70" y="196" width="86" height="34" rx="5" fill="var(--surface-2)" stroke="var(--rule)"/>
+          <text class="lbl-s svg-fg" x="113" y="217" text-anchor="middle">1 Target</text>
+
+          <rect x="166" y="196" width="104" height="34" rx="5" fill="var(--acid-w)" stroke="var(--acid)" stroke-width="1.5"/>
+          <text class="lbl-s" x="218" y="217" text-anchor="middle" fill="var(--acid)" font-weight="700">2 Generate</text>
+
+          <rect x="280" y="196" width="86" height="34" rx="5" fill="var(--surface-2)" stroke="var(--rule)"/>
+          <text class="lbl-s svg-fg" x="323" y="217" text-anchor="middle">3–4 Filter</text>
+
+          <rect x="376" y="196" width="104" height="34" rx="5" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.5"/>
+          <text class="lbl-s" x="428" y="217" text-anchor="middle" fill="var(--neutral)" font-weight="700">5 pH graft</text>
+
+          <rect x="490" y="196" width="80" height="34" rx="5" fill="var(--surface-2)" stroke="var(--rule)"/>
+          <text class="lbl-s svg-fg" x="530" y="217" text-anchor="middle">6 Select</text>
+        </g>
+        <g stroke="currentColor" stroke-width="1.4">
+          <line x1="156" y1="213" x2="162" y2="213" marker-end="url(#tk)"/>
+          <line x1="270" y1="213" x2="276" y2="213" marker-end="url(#tk)"/>
+          <line x1="366" y1="213" x2="372" y2="213" marker-end="url(#tk)"/>
+          <line x1="480" y1="213" x2="486" y2="213" marker-end="url(#tk)"/>
+        </g>
+
+        <!-- contenders for stage 2 -->
+        <text class="lbl-s svg-faint" x="20" y="36">CONTEND</text>
+        <text class="lbl-s svg-faint" x="20" y="50">FOR 2</text>
+
+        <rect x="96" y="26" width="128" height="28" rx="5" fill="var(--surface)" stroke="var(--rule)"/>
+        <text class="lbl-s svg-fg" x="160" y="44" text-anchor="middle">BindCraft · committed</text>
+
+        <rect x="96" y="62" width="128" height="28" rx="5" fill="var(--surface)" stroke="var(--neutral)" stroke-width="2"/>
+        <text class="lbl-s" x="160" y="80" text-anchor="middle" fill="var(--neutral)" font-weight="700">BioNeMo NIM route</text>
+
+        <rect x="96" y="98" width="128" height="28" rx="5" fill="var(--surface)" stroke="var(--rule)" stroke-dasharray="4 3"/>
+        <text class="lbl-s svg-muted" x="160" y="116" text-anchor="middle">Proteina-Complexa</text>
+
+        <rect x="96" y="134" width="128" height="28" rx="5" fill="var(--surface)" stroke="var(--rule)" stroke-dasharray="4 3"/>
+        <text class="lbl-s svg-faint" x="160" y="152" text-anchor="middle">RFD4-Proteina</text>
+
+        <!-- braces into stage 2 -->
+        <path d="M 228 40 L 244 40 L 244 178 L 218 178 L 218 192" fill="none" stroke="var(--rule)" stroke-width="1.2"/>
+        <path d="M 228 76 L 244 76" fill="none" stroke="var(--neutral)" stroke-width="2"/>
+        <path d="M 228 112 L 244 112" fill="none" stroke="var(--rule)" stroke-width="1.2"/>
+        <path d="M 228 148 L 244 148" fill="none" stroke="var(--rule)" stroke-width="1.2"/>
+        <text class="lbl-s svg-faint" x="252" y="168">pick exactly one</text>
+
+        <!-- note: NIM route also covers 3-4 -->
+        <path d="M 244 76 L 300 76 L 300 190" fill="none" stroke="var(--neutral)" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#tk-t)"/>
+        <text class="lbl-s" x="308" y="88" fill="var(--neutral)">also brings ipSAE filtering</text>
+
+        <!-- ArcRefine attaches below stage 5 -->
+        <rect x="376" y="258" width="128" height="28" rx="5" fill="var(--surface)" stroke="var(--neutral)" stroke-width="1.6"/>
+        <text class="lbl-s" x="440" y="276" text-anchor="middle" fill="var(--neutral)" font-weight="700">ArcRefine</text>
+        <path d="M 440 254 L 440 236" fill="none" stroke="var(--neutral)" stroke-width="1.6" marker-end="url(#tk-t)"/>
+        <text class="lbl-s svg-muted" x="512" y="274">repairs variants the graft broke</text>
+      </svg>
+    </div>
+    <figcaption><b>Three of the four compete for the same slot.</b> Only ArcRefine adds a stage the plan does not already have — which is a large part of why it survives the cut despite the thinnest evidence of the four.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <div class="sec-head"><span class="sec-num">01</span><h2>ArcRefine</h2></div>
+  <div class="tool-head"><span class="vb maybe">Friday, 2 hr, hard stop</span></div>
+  <p class="tool-sub">FoldArc · Ken Osumi · October 2026 · <a href="https://foldarc.com/research/structural-carryover/?lang=en">structural carryover</a></p>
+
+  <h3>What it is</h3>
+
+  <p>A method that refines an existing binder's sequence while preserving its binding position and orientation. The mechanism, which they call <em>structural carryover</em>, is that the binder–target complex is predicted once with Boltz-2, and every subsequent sequence update begins from the previous prediction's structural information instead of being predicted from scratch. The structure is not frozen, so sequence and shape can both move, but the pose is carried forward rather than rediscovered each round.</p>
+
+  <p>The positioning is explicit: it is meant to fill the gap between tools that generate a pose at a chosen site, like RFdiffusion, and tools that optimise a sequence, like BindCraft, so that the arrangement is not lost in the handoff between them.</p>
+
+  <h3>Why it matters to this project specifically</h3>
+
+  <div class="key">
+    <p>In stage 5 you graft a histidine into the interface core, and the most likely single outcome is that it destroys the interface. Your only current response is to discard that variant.</p>
+    <p>ArcRefine offers a different response: <strong>keep the pose, keep the histidine, re-optimise everything around it.</strong> That converts your largest source of attrition into a repair step.</p>
+  </div>
+
+  <p>This is worth real money at that point in the funnel, because by Friday the pool is only a few dozen designs deep and every variant lost to a broken interface is a submission slot you cannot fill.</p>
+
+  <h3>The evidence</h3>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Test</th><th>Optimized</th><th>Unoptimized</th><th>Kind</th></tr></thead>
+    <tbody>
+      <tr><td>TNFα binding</td><td class="num">6 / 10</td><td class="num">1 / 10</td><td>Experimental</td></tr>
+      <tr><td>PD-L1 binding</td><td class="num">4 / 10</td><td class="num">1 / 10</td><td>Experimental</td></tr>
+      <tr><td>Pose retention after ~⅔ of residues changed</td><td colspan="2">Held, on fresh predictions given no carried information</td><td>Computational</td></tr>
+      <tr><td>DNA- and small-molecule-binding redesigns</td><td colspan="2">Not measured</td><td>Computational only</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="cs">
+    <span class="tag">Read the caveats, which the page states itself</span>
+    <p>Candidates were selected independently for each group, so the comparison reflects the output of whole workflows and does not isolate the effect of structural carryover. The results also do not demonstrate that binding occurs at the predicted site. That is unusually candid for a method page, and it is the right way to read the numbers above.</p>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><span class="k">Evidence</span><span class="v warn">n = 10 per arm, single author, weeks old</span></div>
+    <div class="fact"><span class="k">Licence</span><span class="v">PolyForm Noncommercial 1.0.0</span></div>
+    <div class="fact"><span class="k">Citation</span><span class="v">Osumi (2026), Zenodo</span></div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-col for">
+      <span class="tag">For</span>
+      <ul>
+        <li>Only tool here that adds a capability the plan lacks</li>
+        <li>Attacks stage 5's dominant failure mode directly</li>
+        <li>Off the critical path — nothing breaks if it fails</li>
+        <li>Noncommercial licence is fine for a competition</li>
+      </ul>
+    </div>
+    <div class="pc-col against">
+      <span class="tag">Against</span>
+      <ul>
+        <li>Twenty designs total across both experimental arms</li>
+        <li>No independent replication</li>
+        <li>Comparison does not isolate the mechanism</li>
+        <li>Another Boltz-2 environment to stand up on a Friday</li>
+      </ul>
+    </div>
+  </div>
+
+  <p><strong>How to use it.</strong> Friday evening, after the histidine scan, applied only to variants that re-folded badly. Two hours, hard stop, abandon on any install trouble.</p>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <div class="sec-head"><span class="sec-num">02</span><h2>BioNeMo Agent Toolkit</h2></div>
+  <div class="tool-head"><span class="vb adopt">Spike today — 2 hours</span></div>
+  <p class="tool-sub">NVIDIA · <a href="https://github.com/NVIDIA-BioNeMo/bionemo-agent-toolkit/tree/main">github.com/NVIDIA-BioNeMo/bionemo-agent-toolkit</a></p>
+
+  <h3>What it is</h3>
+
+  <p>A set of agent skills wrapping NVIDIA's biology models — installable directly into Claude Code, which is what you are already using, so the integration cost is close to zero. Each skill bundles instructions, scripts and references so an agent can select a tool, prepare its inputs, run it and interpret the output. Install is a single command of the form <code>npx skills add NVIDIA-BioNeMo/bionemo-agent-toolkit --skill &lt;name&gt;</code>. Code is Apache-2.0, skills and docs are CC-BY-4.0.</p>
+
+  <h3>The part that matters</h3>
+
+  <p>There is a workflow called <code>generative-protein-binder-design</code> offering two routes.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Route</th><th>Chains</th><th>Relation to your plan</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td><code>protein-binder-design</code></td><td>RFdiffusion → ProteinMPNN → Boltz-2 / OpenFold3, as NIM services</td><td>The route section 04 rejected — pre-orchestrated</td></tr>
+      <tr><td><code>complexa-binder-design</code></td><td>Proteina-Complexa reward-guided co-design, AF2 reward gate, validated with Boltz-2 / OpenFold3</td><td>A second path to the model in section 04</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>Both routes resolve the target and its hotspots, generate candidates, co-fold each independently, and rank on <strong>ipTM, ipSAE, pLDDT and apo↔holo RMSD</strong> — which is very nearly the exact filter stack specified in section 05 of the plan, ipSAE included. That stack was going to cost you an afternoon of scripting.</p>
+
+  <div class="key">
+    <p>The whole argument for BindCraft in section 04 was setup risk: three codebases, three dependency stacks, one evening lost to a version conflict. <strong>This toolkit may have removed that argument</strong>, because the three-tool route comes pre-orchestrated and the models can run as hosted NIM endpoints needing only an <code>NGC_API_KEY</code> rather than a local GPU.</p>
+  </div>
+
+  <p>If that holds, you get the cost profile of the RFdiffusion route without the setup risk that made it unacceptable. And since you already hold Brev credits, you are inside NVIDIA's ecosystem anyway.</p>
+
+  <div class="pc">
+    <div class="pc-col for">
+      <span class="tag">For</span>
+      <ul>
+        <li>Removes the one objection that decided section 04</li>
+        <li>Hosted NIMs may mean no local GPU for stages 2–4</li>
+        <li>Ships the ipSAE filter stack you were going to build</li>
+        <li>Installs into the tool you are already working in</li>
+      </ul>
+    </div>
+    <div class="pc-col against">
+      <span class="tag">Against</span>
+      <ul>
+        <li>Several skills marked <em>pending validation</em> in the README</li>
+        <li>Hosted evaluations use single test cases</li>
+        <li>NIM quota and rate limits unknown — a run of thousands of designs is exactly where a limit bites</li>
+        <li>New infrastructure, not a settled tool</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="ckpt">
+    <span class="tag">Spike design — two hours, today</span>
+    <ul>
+      <li>Install the <code>protein-binder-design</code> skill and run <em>its own</em> example target.</li>
+      <li>Success criterion: one binder designed end to end against their example, not yours. Do not substitute TfR1 — that conflates two unknowns.</li>
+      <li>Record wall-clock time and whether anything hit a rate limit.</li>
+      <li>Install BindCraft tonight regardless. This spike does not replace that.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <div class="sec-head"><span class="sec-num">03</span><h2>RFD4-Proteina</h2></div>
+  <div class="tool-head"><span class="vb no">Not this week — note it for version two</span></div>
+  <p class="tool-sub">Institute for Protein Design (UW) + NVIDIA · Baker &amp; Didi · <a href="https://rfd4-proteina.org/">rfd4-proteina.org</a> · <a href="https://github.com/RosettaCommons/RFD4-Proteina">code</a></p>
+
+  <h3>What it is</h3>
+
+  <p>A design model working in a shared latent space that spans standard and modified amino acids, sugars, DNA and RNA. It combines two kinds of reasoning: <em>intrinsic</em>, meaning recurrent refinement that adaptively allocates compute, and <em>extrinsic</em>, meaning beam search guided by scores such as energetics or geometric criteria. BSD-3-Clause code, weights on Hugging Face, a PyPI package, and wet-lab validation across a wide range of target classes.</p>
+
+  <div class="facts">
+    <div class="fact"><span class="k">Speed at 200 res</span><span class="v good">1.35 s vs RFD3's 5.12 s</span></div>
+    <div class="fact"><span class="k">Peak memory</span><span class="v good">1.36 GB vs RFD3's 8.50 GB</span></div>
+    <div class="fact"><span class="k">Licence (code)</span><span class="v">BSD-3-Clause</span></div>
+  </div>
+
+  <h3>The question you are actually asking</h3>
+
+  <p>Reward-guided search means designs are scored mid-generation against an objective. The obvious hope is that you plug in a pH reward and requirement ③ stops being unmeasurable.</p>
+
+  <p>It does not work, and the reason is worth understanding properly rather than taking on trust.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 640 262" role="img" aria-label="The search reward is evaluated at checkpoints on partially denoised structures, but PROPKA and FoldX require a clean complete full-atom structure, so a pH reward returns noise at every point where the search could use it">
+        <defs>
+          <marker id="pa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- denoising trajectory -->
+        <text class="lbl-s svg-faint" x="40" y="32">DENOISING TRAJECTORY</text>
+        <line x1="60" y1="78" x2="580" y2="78" stroke="currentColor" stroke-width="1.4" marker-end="url(#pa)"/>
+
+        <!-- blobs getting cleaner -->
+        <circle cx="100" cy="78" r="17" fill="var(--surface-2)" stroke="var(--rule)" stroke-dasharray="2 3"/>
+        <circle cx="220" cy="78" r="17" fill="var(--surface-2)" stroke="var(--rule)" stroke-dasharray="3 3"/>
+        <circle cx="340" cy="78" r="17" fill="var(--surface-2)" stroke="var(--rule)" stroke-dasharray="5 3"/>
+        <circle cx="460" cy="78" r="17" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.6"/>
+        <text class="lbl-s svg-faint" x="100" y="110" text-anchor="middle">noise</text>
+        <text class="lbl-s svg-faint" x="220" y="110" text-anchor="middle">partial</text>
+        <text class="lbl-s svg-faint" x="340" y="110" text-anchor="middle">partial</text>
+        <text class="lbl-s" x="460" y="110" text-anchor="middle" fill="var(--neutral)" font-weight="700">finished</text>
+
+        <!-- checkpoints -->
+        <text class="lbl-s svg-muted" x="40" y="146">SEARCH SCORES HERE</text>
+        <g>
+          <line x1="220" y1="130" x2="220" y2="96" stroke="var(--acid)" stroke-width="1.6" marker-end="url(#pa)"/>
+          <line x1="340" y1="130" x2="340" y2="96" stroke="var(--acid)" stroke-width="1.6" marker-end="url(#pa)"/>
+        </g>
+        <rect x="178" y="130" width="84" height="22" rx="4" fill="var(--acid-w)"/>
+        <text class="lbl-s" x="220" y="145" text-anchor="middle" fill="var(--acid)">checkpoint</text>
+        <rect x="298" y="130" width="84" height="22" rx="4" fill="var(--acid-w)"/>
+        <text class="lbl-s" x="340" y="145" text-anchor="middle" fill="var(--acid)">checkpoint</text>
+
+        <!-- what pH tools need -->
+        <line x1="60" y1="176" x2="580" y2="176" stroke="var(--rule)"/>
+        <text class="lbl-s svg-muted" x="40" y="202">pH TOOLS NEED</text>
+        <rect x="414" y="190" width="92" height="24" rx="4" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="1.4"/>
+        <text class="lbl-s" x="460" y="206" text-anchor="middle" fill="var(--neutral)" font-weight="700">this, only</text>
+        <text class="lbl-s svg-faint" x="514" y="206">PROPKA / FoldX need clean full-atom</text>
+
+        <!-- the mismatch -->
+        <path d="M 220 190 L 240 214 M 240 190 L 220 214" stroke="var(--acid)" stroke-width="2.2"/>
+        <path d="M 340 190 L 360 214 M 360 190 L 340 214" stroke="var(--acid)" stroke-width="2.2"/>
+        <text class="lbl-s" x="230" y="234" text-anchor="middle" fill="var(--acid)">noise</text>
+        <text class="lbl-s" x="350" y="234" text-anchor="middle" fill="var(--acid)">noise</text>
+
+        <text class="lbl-s svg-faint" x="40" y="256">The reward hook and the pH tools never overlap: by the time pH is computable, the search is already over.</text>
+      </svg>
+    </div>
+    <figcaption><b>A shape mismatch, not a plumbing problem.</b> The reward is evaluated on partially denoised structures; PROPKA and FoldX need clean, complete, full-atom structures. Run them at a checkpoint and you get noise.</figcaption>
+  </figure>
+
+  <h3>What would work, for version two</h3>
+
+  <div class="key">
+    <p>A <strong>pure-geometry histidine reward</strong>: score a design on whether a histidine sits in the interface core within salt-bridge distance of an arginine or lysine on the target. That needs only coordinates — no pKa prediction — so it is perfectly computable on intermediate states.</p>
+    <p>This is the first idea in the whole project that could move requirement ③ from <em>sampled</em> to <em>optimised</em>.</p>
+  </div>
+
+  <p>And it is unambiguously not an eight-day task. The custom reward path is documented only for the NIM route — write a <code>reward.py</code> callback, mount it at <code>/opt/nim/reward.py</code>, set <code>NIM_ALLOW_ORACLE_PLUGIN=true</code>, relaunch the service, then reference the metric key in the search request's weights. The equivalent for the open model is not documented in the blog at all. Write it down and come back to it.</p>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <div class="sec-head"><span class="sec-num">04</span><h2>Proteina-Complexa</h2></div>
+  <div class="tool-head"><span class="vb hold">Reserve — behind both other engines</span></div>
+  <p class="tool-sub">NVIDIA · ICLR 2026 oral · <a href="https://github.com/NVIDIA-BioNeMo/Proteina-Complexa">code</a> · <a href="https://research.nvidia.com/publication/2026-01_proteina-complexa-scaling-atomistic-protein-binder-design-generative">paper</a></p>
+
+  <h3>What it is</h3>
+
+  <p>A flow-matching generative model that designs backbone, side-chain conformations and sequence <em>jointly</em> and fully atomistically, built on La-Proteina, with inference-time optimisation against reward models including AF2, RoseTTAFold3 and force fields, using beam search, MCTS, best-of-N and FK steering.</p>
+
+  <h3>Why it is the serious challenger</h3>
+
+  <p>The paper reports that its test-time optimisation <strong>outperforms earlier hallucination methods under normalised compute budgets</strong>. Hallucination is precisely what BindCraft does. That is a like-for-like claim against your chosen engine at matched cost, which is the only kind of comparison worth acting on.</p>
+
+  <h3>Why it is in reserve anyway</h3>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Issue</th><th>Detail</th><th>Cost to you</th></tr></thead>
+    <tbody>
+      <tr class="warn"><td>Hardware floor</td><td>Needs at least A100, H100 or newer</td><td>Invalidates the L40S choice in section 08. A100 at ~$3/hr vs L40S at ~$1.75 cuts ~100 hours to ~65.</td></tr>
+      <tr class="warn"><td>Target definition</td><td>Targets chosen by task name (<code>++generation.task_name=02_PDL1</code>), defined in <code>configs/targets/</code> and <code>configs/design_tasks/</code>. README documents no hotspot or epitope selection.</td><td>Adding TfR1 with a specific apical epitope is config archaeology of unknown depth — the exact shape of task that eats a week.</td></tr>
+      <tr><td>Runtime</td><td>Only qualitative: "generation examples should complete within minutes", tested on A100</td><td>Cannot budget GPU hours from the documentation.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="cs">
+    <span class="tag">Note the second route</span>
+    <p>The BioNeMo toolkit's <code>complexa-binder-design</code> skill reaches this same model through a pre-orchestrated path with an AF2 reward gate and independent Boltz-2 validation. If today's spike goes well, that is a far cheaper way to try Proteina-Complexa than standing the repo up yourself — and it is the same two hours.</p>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <div class="sec-head"><span class="sec-num">05</span><h2>The one I could not verify</h2></div>
+  <div class="tool-head"><span class="vb unk">Unverified — send me the link</span></div>
+
+  <p>Searching several ways for <code>BioNeMo-ProteinaComplexa-binder-design-ISMB2026</code> turned up nothing connecting Proteina-Complexa to ISMB 2026: no tutorial, no workshop session, no launchable, no hosted notebook. The model's venue is ICLR 2026.</p>
+
+  <p>I would rather say that plainly than write a convincing description of something I have not confirmed exists. If you saw it in the Brev console, or someone sent you a link, paste it and I will look properly.</p>
+
+  <div class="key">
+    <p>If it turns out to be a <strong>preconfigured Brev launchable</strong>, it is potentially the most valuable item on your entire list — because it would eliminate Saturday's setup risk outright, and setup is the number one entry in the plan's risk register.</p>
+  </div>
+
+  <div class="key acid">
+    <p><strong>One caution found along the way.</strong> There is a third-party hosted service at proteiniq.io offering Proteina-Complexa online. Do not put your designs into it. Uploading competition candidates to an unaffiliated service before submission is a disclosure risk with no upside.</p>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <div class="sec-head"><span class="sec-num">06</span><h2>What this changes</h2></div>
+
+  <p>One thing, and it is a real one. <strong>The section 04 decision is now contested rather than settled.</strong> BindCraft was chosen because the assemble-it-yourself route carried unacceptable setup risk; the BioNeMo toolkit may have removed that risk. Neither of us can resolve that from documentation. It needs a run.</p>
+
+  <p>Everything else stays as written. The pipeline shape, the funnel widths, the pH strategy, the portfolio allocation and the calendar are all unaffected by these four tools.</p>
+
+  <div class="acts">
+    <div class="act">
+      <div class="act-t">Spike the BioNeMo NIM route</div>
+      <div class="act-d">Two hours. Their example target, not yours. Success is one binder end to end.</div>
+      <div class="act-when">today · before the BindCraft install</div>
+    </div>
+    <div class="act">
+      <div class="act-t">Install BindCraft regardless</div>
+      <div class="act-d">It stays the committed path until something beats it in a comparison you have actually run, not read about.</div>
+      <div class="act-when">today · evening, as already planned</div>
+    </div>
+    <div class="act">
+      <div class="act-t">Decide at the Sunday go/no-go</div>
+      <div class="act-d">The gate already exists in the plan. It now has one more option in it, and the same deadline.</div>
+      <div class="act-when">Sun 25</div>
+    </div>
+    <div class="act">
+      <div class="act-t">Hold Proteina-Complexa in reserve</div>
+      <div class="act-d">Strongest claims, highest config risk, and it forces an A100 and a smaller hour budget.</div>
+      <div class="act-when">only if both other engines fail</div>
+    </div>
+    <div class="act">
+      <div class="act-t">Pencil in ArcRefine</div>
+      <div class="act-d">Repair step for histidine variants that re-fold badly. Two hours, hard stop, abandon on install trouble.</div>
+      <div class="act-when">Fri 30 · off the critical path</div>
+    </div>
+  </div>
+
+  <div class="key acid">
+    <p><strong>Adopt at most one of the engines.</strong> Four tools is the failure mode named in section 10 of the plan, and the fact that these are genuinely good tools does not change the arithmetic of an eight-day week. The plan was already at the edge of what the time supports.</p>
+  </div>
+</section>
+
+<footer>
+  <p><b>Sources.</b>
+    <a href="https://foldarc.com/research/structural-carryover/?lang=en">ArcRefine</a> ·
+    <a href="https://github.com/NVIDIA-BioNeMo/bionemo-agent-toolkit/tree/main">BioNeMo Agent Toolkit</a> ·
+    <a href="https://github.com/NVIDIA-BioNeMo/bionemo-agent-toolkit/tree/main/workflows/generative-protein-binder-design">binder design workflow</a> ·
+    <a href="https://rfd4-proteina.org/">RFD4-Proteina</a> ·
+    <a href="https://github.com/RosettaCommons/RFD4-Proteina">RFD4-Proteina code</a> ·
+    <a href="https://developer.nvidia.com/blog/design-proteins-with-rfd4-proteina-using-reward-guided-inference-time-search/">reward-guided search</a> ·
+    <a href="https://github.com/NVIDIA-BioNeMo/Proteina-Complexa">Proteina-Complexa</a> ·
+    <a href="https://research.nvidia.com/publication/2026-01_proteina-complexa-scaling-atomistic-protein-binder-design-generative">ICLR 2026 paper</a> ·
+    <a href="https://developer.nvidia.com/blog/designing-protein-binders-using-the-generative-model-proteina-complexa/">NVIDIA guide</a>
+  </p>
+  <p>All claims above are as stated by the tools' own pages, read on 24 October 2026. Benchmark numbers are self-reported by their authors and none have been independently replicated here. GPU pricing is indicative and should be confirmed against live rates.</p>
+</footer>
+
+</main>
+</div>
+</div>
+
+<script>
+/* contents + scrollspy */
+(function () {
+  const toc = document.getElementById('toc');
+  const secs = [...document.querySelectorAll('main section')];
+  const links = secs.map(s => {
+    const n = s.querySelector('.sec-num').textContent;
+    const h = s.querySelector('h2').textContent;
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = '#' + s.id;
+    a.innerHTML = '<span class="n"></span><span class="t"></span>';
+    a.querySelector('.n').textContent = n;
+    a.querySelector('.t').textContent = h;
+    li.appendChild(a); toc.appendChild(li);
+    return a;
+  });
+  const io = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (e.isIntersecting) {
+        const i = secs.indexOf(e.target);
+        links.forEach((a, j) => a.classList.toggle('on', i === j));
+      }
+    });
+  }, { rootMargin: '-10% 0px -75% 0px' });
+  secs.forEach(s => io.observe(s));
+})();
+</script>
+
+</body>
+</html>
