@@ -389,9 +389,9 @@ footer p { margin: 10px 0; }
   <p>That table is the brief as the competition writes it. Stated in the language of the problem, which parts 01 to 10 below will build up from nothing, the specification reads like this.</p>
 
   <ul>
-    <li><strong>Bind the apical domain, and leave the transferrin site alone.</strong> TfR1 has a patch at the top with no natural partner, which is where we aim. Residues 619–670 form the site where the iron courier binds, and blocking that would stop iron delivery throughout the body and cause anaemia.</li>
-    <li><strong>Grip the three positions that human and mouse share.</strong> Of the nine key positions on the apical patch, human and mouse TfR1 have only three in common. A binder that works in both species has to take most of its grip from those three while tolerating the six that differ, either by avoiding them or by contacting them in a way that works either way.</li>
-    <li><strong>Put histidines at the centre of the contact surface.</strong> Histidine is the only amino acid whose tipping point, around pKa 6.5, falls between pH 7.4 and pH 6.0, which makes it the only residue that changes its charge between the two conditions. Where it sits matters more than how many there are, and one placed beside an already-positive side chain hits hardest, because protonating it creates direct repulsion.</li>
+    <li><strong>Target an accessible apical patch while preserving transferrin binding.</strong> Check the full receptor dimer, its other domains and glycan-bearing regions. The apical domain also has natural ligands, including ferritin.</li>
+    <li><strong>Prioritize conserved surface patches.</strong> The domain is about 74% identical in the project alignment. Task 6 proposes F237/K240/K241 as a provisional patch, not an experimentally validated set of three shared hotspots. Check the whole interface in both species; see <a href="task6-hotspot-analysis.md">the evidence report</a>.</li>
+    <li><strong>Engineer histidines on the binder after choosing an interface.</strong> Their usual pKa is near the desired pH range, but local geometry and protonation determine whether binding weakens or strengthens. Conserved TfR1 residues are attachment targets, not receptor residues to mutate.</li>
     <li><strong>Clear 1 µM, then go as low as you can.</strong> K<sub>D</sub> below 1 µM is the floor for qualifying. Among the designs that survive the pH test, the tightest binder wins, so the threshold is something to clear rather than something to aim at.</li>
     <li><strong>Design it from scratch.</strong> The rules require the binder to be <button class="term" data-t="denovo">de novo</button>, so taking an existing anti-TfR1 antibody and modifying it is disqualifying. We check our designs against known structures to prove originality.</li>
   </ul>
@@ -708,7 +708,7 @@ footer p { margin: 10px 0; }
         <line x1="256" y1="119" x2="256" y2="226" stroke="var(--acid)" stroke-width="1.6"/>
       </svg>
     </div>
-    <figcaption><b>Histidine is the only switch available.</b> Every other titratable side chain has its tipping point far outside the pH 6.0–7.4 window, so it is in exactly the same state at both conditions. Only histidine flips.</figcaption>
+    <figcaption><b>Histidine is a useful starting point.</b> These are illustrative solution pKa values. Protein environments can shift them, and protonation can either weaken or strengthen binding.</figcaption>
   </figure>
 
   <div class="tw">
@@ -725,7 +725,7 @@ footer p { margin: 10px 0; }
   </div>
 
   <div class="key acid">
-    <p>It is worth reading that table twice, because the pattern in it is the reason this project is possible at all. In moving from pH 7.4 down to pH 6.0, <strong>every side chain stays in exactly the state it was already in, with the single exception of histidine.</strong> The acidic side chains had already given up their protons at both conditions, the basic ones were still holding onto theirs at both, and histidine's tipping point is the only one that happens to fall inside the window we care about.</p>
+    <p>Histidine usually changes protonation substantially across this range. The table simplifies a continuous equilibrium: side-chain environments alter pKa values, so a designed interface needs its own assessment.</p>
     <p>That one accident of chemistry is what determines our entire strategy for the third requirement.</p>
   </div>
 
@@ -884,7 +884,7 @@ footer p { margin: 10px 0; }
 
   <div class="cs">
     <span class="tag">If you think in code</span>
-    <p>What we are writing is <code>if (inside_cell) { release(); }</code>, implemented in chemistry rather than in code. The pH serves as the variable being tested, the histidine performs the comparison, and the collapsing contact surface is the body of the branch. Histidine happens to be the only conditional that chemistry offers us anywhere in this range.</p>
+    <p>What we are writing is <code>if (inside_cell) { release(); }</code>, implemented in chemistry rather than in code. The pH serves as the variable being tested, the histidine performs the comparison, and the collapsing contact surface is the body of the branch. Histidine offers a practical mechanism, provided its environment gives the desired change in affinity.</p>
   </div>
 </section>
 
@@ -962,7 +962,7 @@ footer p { margin: 10px 0; }
 
   <h3>The shape of TfR1</h3>
 
-  <p>TfR1 is a <button class="term" data-t="homodimer">homodimer</button>, meaning two identical copies of the protein locked together as a single working unit. The portion that sits outside the cell is called the <button class="term" data-t="ectodomain">ectodomain</button> and spans residues 121 to 760, and rather than folding into one undifferentiated lump, each copy's 640 residues fold into three distinct domains.</p>
+  <p>TfR1 is a <button class="term" data-t="homodimer">homodimer</button>, meaning two identical copies of the protein locked together as a single working unit. The portion that sits outside the cell is called the <button class="term" data-t="ectodomain">ectodomain</button> and spans residues 89 to 760 by UniProt's topology, of which 122 to 760 is resolved in the crystal structure. Rather than folding into one undifferentiated lump, each copy's 639 resolved residues fold into three distinct domains.</p>
 
   <p>Their names are worth decoding, because the three of them follow three completely different naming conventions and nobody ever points this out:</p>
 
@@ -979,7 +979,7 @@ footer p { margin: 10px 0; }
 
   <p>Because the three names follow different logics, you cannot reason by analogy between them. One tells you where the domain is, one tells you what it is made of, and one tells you what it resembles but is not.</p>
 
-  <p>There is also a wrinkle in how they map onto the sequence. The apical domain is an insertion into the middle of the protease-like domain: residues 121 to 188 begin the protease-like domain, then 189 to 383 branch off to form the apical domain, then 384 to 606 return to complete the protease-like domain, and 607 to 760 form the helical domain. Position along the chain and position in space are not the same thing, which is a useful habit of mind to pick up early.</p>
+  <p>There is also a wrinkle in how they map onto the sequence. The apical domain is an insertion into the middle of the protease-like domain: residues 122 to 189 begin the protease-like domain, then 190 to 382 branch off to form the apical domain, then 383 to 608 return to complete the protease-like domain, and 609 to 760 form the helical domain (boundaries as assigned by SCOP for PDB 1CX8; domain edges are inherently approximate and other databases place them a few residues differently). Position along the chain and position in space are not the same thing, which is a useful habit of mind to pick up early.</p>
 
   <h3>Where the domains sit, and why that decides our target</h3>
 
@@ -1054,7 +1054,7 @@ footer p { margin: 10px 0; }
 
   <p><strong>It is accessible.</strong> Sitting at the very top of the structure with nothing above it, the apical domain is the easiest part of the whole receptor for a designed binder to reach. The helical domain, by contrast, is down near the membrane and partly buried against its own partner copy.</p>
 
-  <p><strong>It is unoccupied.</strong> The helical domain is already doing two jobs at once, holding the dimer together and binding transferrin, whereas the apical domain has no known natural partner at all. There is nothing there for us to compete with.</p>
+  <p><strong>Its accessibility must be checked.</strong> Ferritin binds the apical domain, and 11QC resolves glycans at N251 and N317. Correct reconstruction of 3S9L biological assemblies gives eleven apical dimer-contact residues (312–314, 316–320, 322–324) and no direct apical–transferrin contacts at 5&nbsp;Å in that structure. The earlier 21-residue avoid list was based on crystal packing and is superseded. Neither result guarantees that an entire binder will fit.</p>
 
   <p><strong>It is as far from the iron site as it is possible to get.</strong> Binding at the top leaves the transferrin site at the bottom entirely free, so iron delivery continues normally throughout the body. Interfering with that would cause anaemia, which is the kind of side effect that ends a drug programme.</p>
 
@@ -1246,7 +1246,7 @@ footer p { margin: 10px 0; }
 
   <h3>② Also bind mouse TfR1 at pH 7.4</h3>
   <p>This is a drug-development requirement rather than a biological one. Before any drug reaches humans it has to be tested in mice, but a binder that recognises only the human version of the receptor cannot be tested that way at all. Teams currently work around the problem either by building a separate mouse-only version of the drug, which means they are no longer testing the thing they intend to sell, or by genetically engineering mice to carry the human receptor instead. Both routes are slow and expensive.</p>
-  <p>The difficulty is that the apical patch <strong>differs at six of its nine key positions</strong> between human and mouse, so the two surfaces genuinely do not look alike, which incidentally is also why certain human-infecting viruses cannot infect mice. What we need is a binding mode that grips the three shared positions firmly while tolerating the six that differ.</p>
+  <p>The competition’s six-of-nine statement concerns a particular local patch and does not identify three universally usable binding sites. We instead rank conserved, exposed candidates using biological assemblies, then test complete interfaces against both species. Details and caveats are in <a href="task6-hotspot-analysis.md">task 6</a>.</p>
 
   <h3>③ Bind at pH 7.4, with no detectable binding at pH 6.0</h3>
   <p>This is the endosomal release described in part 7, and from part 4 you already know that there is exactly one way to achieve it, which is to <strong>put histidines into the contact surface.</strong> At pH 7.4 those histidines are neutral and participate in binding like any other residue, but at pH 6.0 they grab protons and turn positive, and by rule 2 from part 3 a buried positive charge at a contact surface is both expensive and disruptive, so the surface comes apart.</p>
@@ -1386,7 +1386,7 @@ footer p { margin: 10px 0; }
 <script>
 const TERMS = {
   amino:      ["Amino acid", "One of 20 standard building blocks. Proteins are chains of them."],
-  apical:     ["Apical domain", "The outward-pointing domain of TfR1, with no known natural partner. Our target patch."],
+  apical:     ["Apical domain", "The outward-pointing domain of TfR1. Called the PA domain in structural databases. An accessible design region, but also contacted by natural ligands and carrying glycans."],
   bbb:        ["Blood–brain barrier", "Tightly sealed brain blood vessels that block almost everything from entering the brain."],
   denovo:     ["De novo", "Designed from scratch rather than derived from an existing protein. Required by the competition rules."],
   domain:     ["Domain", "A chunk of a protein that folds as its own semi-independent unit. Effectively a module."],
@@ -1398,7 +1398,7 @@ const TERMS = {
   helix:      ["Alpha-helix", "A spiral coil, one of the two common local shapes a stretch of protein chain settles into. The helical domain of TfR1 is named for being built mostly from these."],
   sheet:      ["Beta-sheet", "A flat zigzag ribbon that lines up alongside its neighbours. The other common local shape, alongside the alpha-helix."],
   protease:   ["Protease-like domain", "A domain of TfR1 named for resembling a protease, an enzyme that cuts proteins, although it has no such activity. Structural only."],
-  histidine:  ["Histidine", "The one amino acid whose pKa (~6.0–6.5) falls between pH 7.4 and 6.0, making it the only available pH switch."],
+  histidine:  ["Histidine", "An amino acid with a usual side-chain pKa near 6–6.5. Its protonation is environment-dependent and can be used to engineer pH-sensitive binding."],
   homodimer:  ["Homodimer", "Two identical protein copies bound together as one working unit. TfR1 is one."],
   hotspot:    ["Hotspot", "A residue on the target that contributes disproportionately to binding. Used to aim design tools."],
   hydrophobic:["Hydrophobic", "“Water-fearing”. Greasy side chains that cluster away from water."],

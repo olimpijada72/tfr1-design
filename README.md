@@ -20,7 +20,7 @@ The binder has to satisfy three requirements at once.
 | ② | Also bind mouse TfR1 at pH 7.4 | Drugs are tested in mice before humans. A human-only binder cannot be tested at all. |
 | ③ | **Release** human TfR1 at pH 6.0 | pH 6.0 means we are inside the cell. Letting go there frees the cargo to continue into the brain instead of being carried back out. |
 
-Requirement ③ is the hard one. Only **histidine** changes its charge between pH 7.4 and pH 6.0, so it is the only switch chemistry offers — and the generative models we design with have no representation of pH at all.
+Requirement ③ is the hard one. **Histidine** is a practical pH-switch residue because its usual side-chain pKa is near this range, but its environment changes its protonation and the effect on binding. Histidines are introduced into the **binder**, after a complex is designed; conserved TfR1 hotspots are a separate choice.
 
 ## The goal
 
@@ -36,7 +36,7 @@ Six stages. Generation and filtering run on hosted endpoints; the pH switch and 
 
 ```mermaid
 flowchart TD
-    S1["1 · Target prep<br/>truncate TfR1 to the apical domain"]
+    S1["1 · Target prep<br/>truncate TfR1 to the apical domain<br/><i>done</i>"]
     S2["2 · Generation<br/>RFdiffusion → ProteinMPNN → Boltz-2<br/>thousands of candidates"]
     S3["3 · Affinity filter<br/>ipSAE rescore<br/>hundreds remain"]
     S4["4 · Cross-species gate<br/>re-fold against mouse TfR1<br/>50–100 survive"]
@@ -65,10 +65,10 @@ Every stage exists because of a specific biological fact:
 
 | Stage | The biology that demands it |
 |---|---|
-| **1 · Target prep** | TfR1 has one patch we may bind (apical) and one we must not (the transferrin site, residues 619–670 — block it and you cause anaemia). Cut away everything else. |
+| **1 · Target prep** | Focus on the apical domain while preserving transferrin access. Check biological assemblies, truncation edges and glycan exposure before choosing hotspots. |
 | **2 · Generation** | Proteins bind by surfaces that fit. Make thousands of shapes and see which ones do. Binder length is capped at 65–90 residues so the interface stays breakable. |
 | **3 · Affinity filter** | Requirement ① sets a floor of 1 µM. ipSAE scores the interface we designed rather than the target we already understood. |
-| **4 · Cross-species gate** | Human and mouse share only 3 of 9 key positions on the apical patch. Keep what grips those three. Expect to lose half to three quarters of the pool. |
+| **4 · Cross-species gate** | Prioritize conserved surface patches, then evaluate the entire interface against mouse. Conservation alone does not establish cross-reactivity. |
 | **5 · pH switch** | Histidine is the only residue that changes charge between pH 7.4 and 6.0, and burying a charge where no water reaches it breaks an interface. |
 | **6 · Choose twenty** | Requirement ③ can only be scored approximately, so spread the bet rather than ranking on it. Includes 2 unmodified controls. |
 
@@ -90,13 +90,49 @@ Routes B and C are alternatives to *stage 5 only*. Both take the same input stag
 
 | Document | What it covers |
 |---|---|
-| [The TfR1 Problem](docs/tfr1-biological-doc.html) &nbsp;·&nbsp; [md](docs/tfr1-biological-doc.md) | The biology from zero. Assumes no background. Start here if you are new. |
-| [The TfR1 Pipeline](docs/tfr1-architecture.html) &nbsp;·&nbsp; [md](docs/tfr1-architecture.md) | The six stages in detail, with the biology behind each one. The working plan. |
+| [The TfR1 Problem](docs/tfr1-biological-doc.html) | The biology from zero. Assumes no background. Start here if you are new. |
+| [The TfR1 Pipeline](docs/tfr1-architecture.html) | The six stages in detail, with the biology behind each one. The working plan. |
+| [Stage 1: target prep](docs/target-prep.md) | What the target-prep scripts do, every output file, how to run them, and how to visualize the result. |
+| [Task 6: hotspot evidence](docs/task6-hotspot-analysis.md) | Research, provisional F237/K240/K241 patch, mouse mapping, limitations and generator handoff. |
 
-The HTML versions are the originals and are better to read — they carry diagrams, an interactive pH simulator and clickable glossary terms. The Markdown versions exist for diffing, grepping and review.
+Open the HTML files in a browser — they carry diagrams, an interactive pH simulator and clickable glossary terms.
+
+## Visualize the receptor and hotspots
+
+Requires Python 3 and PyMOL. Run from the repository root:
+
+```sh
+# Prepare inputs if you have not already done so:
+python3 -I scripts/prep_target.py
+
+# Render five annotated views and open the interactive PyMOL session:
+python3 -I scripts/visualize_target.py --open
+```
+
+Five scenes, each captioned in the viewer: **01_overview** (the ectodomain dimer coloured by domain), **02_domains** (one chain, its three domains and the transferrin site at 619–670), **03_constraints** (the apical domain with the dimer seam, the glycans and everything else a binder must avoid), **04_target** (exactly what the generator receives), and **05_hotspots** (the candidate patches, best first). The patches are candidate attachment residues, not validated binding sites.
+
+Results are saved in **`data/visualization/`**: one PNG per scene and **`tfr1.pse`**, the interactive session, which also carries named selections for each domain, the transferrin site, the glycans and each patch. Omit `--open` to render without launching the window. Reopen an existing result with:
+
+```sh
+pymol data/visualization/tfr1.pse
+```
+
+If PyMOL is not on your PATH, pass `--pymol /path/to/pymol`. The [target-prep guide](docs/target-prep.md) explains each view, the colour scheme, controls, limitations and troubleshooting.
 
 ## Contributing
 
 The useful background is not biology but pipeline engineering, GPU orchestration and careful evaluation design. If you can run batch jobs on rented GPUs, reason about overfitting to a scoring function, or build the bookkeeping that tracks thousands of candidates down to twenty, you can contribute from day one.
 
 Work is delegated only when it is off the critical path, has a defined input/output contract, and has a do-nothing fallback that is the plan we already have. Route B above is the clearest example.
+
+## Task 6 handoff
+
+Stage 1 now produces **provisional, structure-derived hotspot candidates**. Start with human **F237 / K240 / K241** (mouse **F239 / K242 / K243**). These are not a recovered list of the competition’s unnamed three conserved sites, and binding/pH sensitivity remain untested. See the [evidence and caveats](docs/task6-hotspot-analysis.md).
+
+```sh
+python3 -I scripts/prep_target.py
+python3 -I -m unittest discover -s tests -v
+pymol data/target/hotspots.pml
+```
+
+The generated `hotspots.json` preserves chain C and original human residue numbers for the existing target PDB. It also records crop-relative and mouse numbering. The old 21-residue avoid list was based on crystal packing; regenerated outputs use the biological assemblies. See [the target-prep guide](docs/target-prep.md) for the files, the filters and the caveats.
