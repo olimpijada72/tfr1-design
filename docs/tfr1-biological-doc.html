@@ -962,7 +962,7 @@ footer p { margin: 10px 0; }
 
   <h3>The shape of TfR1</h3>
 
-  <p>TfR1 is a <button class="term" data-t="homodimer">homodimer</button>, meaning two identical copies of the protein locked together as a single working unit. The portion that sits outside the cell is called the <button class="term" data-t="ectodomain">ectodomain</button> and spans residues 121 to 760, and rather than folding into one undifferentiated lump, each copy's 640 residues fold into three distinct domains.</p>
+  <p>TfR1 is a <button class="term" data-t="homodimer">homodimer</button>, meaning two identical copies of the protein locked together as a single working unit. The portion that sits outside the cell is called the <button class="term" data-t="ectodomain">ectodomain</button> and spans residues 89 to 760 by UniProt's topology, of which 122 to 760 is resolved in the crystal structure. Rather than folding into one undifferentiated lump, each copy's 639 resolved residues fold into three distinct domains.</p>
 
   <p>Their names are worth decoding, because the three of them follow three completely different naming conventions and nobody ever points this out:</p>
 
@@ -979,7 +979,7 @@ footer p { margin: 10px 0; }
 
   <p>Because the three names follow different logics, you cannot reason by analogy between them. One tells you where the domain is, one tells you what it is made of, and one tells you what it resembles but is not.</p>
 
-  <p>There is also a wrinkle in how they map onto the sequence. The apical domain is an insertion into the middle of the protease-like domain: residues 121 to 188 begin the protease-like domain, then 189 to 383 branch off to form the apical domain, then 384 to 606 return to complete the protease-like domain, and 607 to 760 form the helical domain. Position along the chain and position in space are not the same thing, which is a useful habit of mind to pick up early.</p>
+  <p>There is also a wrinkle in how they map onto the sequence. The apical domain is an insertion into the middle of the protease-like domain: residues 122 to 189 begin the protease-like domain, then 190 to 382 branch off to form the apical domain, then 383 to 608 return to complete the protease-like domain, and 609 to 760 form the helical domain (boundaries as assigned by SCOP for PDB 1CX8; domain edges are inherently approximate and other databases place them a few residues differently). Position along the chain and position in space are not the same thing, which is a useful habit of mind to pick up early.</p>
 
   <h3>Where the domains sit, and why that decides our target</h3>
 
@@ -1054,7 +1054,7 @@ footer p { margin: 10px 0; }
 
   <p><strong>It is accessible.</strong> Sitting at the very top of the structure with nothing above it, the apical domain is the easiest part of the whole receptor for a designed binder to reach. The helical domain, by contrast, is down near the membrane and partly buried against its own partner copy.</p>
 
-  <p><strong>It is unoccupied.</strong> The helical domain is already doing two jobs at once, holding the dimer together and binding transferrin, whereas the apical domain has no known natural partner at all. There is nothing there for us to compete with.</p>
+  <p><strong>It is unoccupied.</strong> The helical domain is already doing two jobs at once, holding the dimer together and binding transferrin, whereas the apical domain has no natural partner of its own. It is not entirely untouched — in the transferrin-bound structure 3S9L, ten apical residues (195–197, 199, 201, 211, 212, 215, 292, 294) lie within 5&nbsp;Å of transferrin, and fourteen (210, 211, 285, 290–294, 339, 340, 343, 348, 362, 371) touch the second TfR1 copy across the dimer. Those two patches are small and lie to one side; the rest of the domain is genuinely free.</p>
 
   <p><strong>It is as far from the iron site as it is possible to get.</strong> Binding at the top leaves the transferrin site at the bottom entirely free, so iron delivery continues normally throughout the body. Interfering with that would cause anaemia, which is the kind of side effect that ends a drug programme.</p>
 
@@ -1386,7 +1386,7 @@ footer p { margin: 10px 0; }
 <script>
 const TERMS = {
   amino:      ["Amino acid", "One of 20 standard building blocks. Proteins are chains of them."],
-  apical:     ["Apical domain", "The outward-pointing domain of TfR1, with no known natural partner. Our target patch."],
+  apical:     ["Apical domain", "The outward-pointing domain of TfR1, with no natural partner of its own. Called the PA (protease-associated) domain in the structural databases. Our target patch."],
   bbb:        ["Blood–brain barrier", "Tightly sealed brain blood vessels that block almost everything from entering the brain."],
   denovo:     ["De novo", "Designed from scratch rather than derived from an existing protein. Required by the competition rules."],
   domain:     ["Domain", "A chunk of a protein that folds as its own semi-independent unit. Effectively a module."],

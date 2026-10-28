@@ -430,7 +430,7 @@ footer p { margin: 10px 0; }
     <span class="tag">The biology behind it</span>
     <p>TfR1 is two identical copies of the same protein locked together, anchored in the cell membrane. The part sticking out into the bloodstream folds into three distinct chunks, and only one of them is ours to touch.</p>
     <p>The <strong>helical</strong> chunk sits at the bottom near the membrane, where it both holds the two copies together and provides the site where transferrin — the courier protein that carries iron through the blood — docks. Residues 619 to 670 form that site. <strong>Block it and iron delivery stops throughout the body, which causes anaemia.</strong></p>
-    <p>The <strong>apical</strong> chunk sits at the top, pointing away from the cell, with no known natural partner and nothing above it. It is accessible, it is unoccupied, and it is as far from the iron site as it is possible to get. Several viruses independently evolved to enter human cells through it, and the brain-delivery drugs that reached the clinic bind there too.</p>
+    <p>The <strong>apical</strong> chunk sits at the top, pointing away from the cell, with no natural partner of its own and nothing above it. It is accessible, it is unoccupied, and it is as far from the iron site as it is possible to get. Several viruses independently evolved to enter human cells through it, and the brain-delivery drugs that reached the clinic bind there too.</p>
   </div>
 
   <figure>
@@ -468,9 +468,9 @@ footer p { margin: 10px 0; }
         <rect x="168" y="42" width="104" height="48" rx="7" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2.6"/>
         <rect x="348" y="42" width="104" height="48" rx="7" fill="var(--neutral-w)" stroke="var(--neutral)" stroke-width="2.6"/>
         <text class="lbl-b" x="220" y="64" text-anchor="middle" fill="var(--neutral)">APICAL</text>
-        <text class="lbl-s" x="220" y="80" text-anchor="middle" fill="var(--neutral)">res ~189–383</text>
+        <text class="lbl-s" x="220" y="80" text-anchor="middle" fill="var(--neutral)">res 190–382</text>
         <text class="lbl-b" x="400" y="64" text-anchor="middle" fill="var(--neutral)">APICAL</text>
-        <text class="lbl-s" x="400" y="80" text-anchor="middle" fill="var(--neutral)">res ~189–383</text>
+        <text class="lbl-s" x="400" y="80" text-anchor="middle" fill="var(--neutral)">res 190–382</text>
 
         <line x1="420" y1="167" x2="470" y2="167" stroke="var(--acid)" stroke-width="1.4"/>
         <text class="lbl" x="478" y="163" fill="var(--acid)" font-weight="700">Transferrin site</text>
@@ -485,8 +485,8 @@ footer p { margin: 10px 0; }
   <h3>What to do</h3>
 
   <ol>
-    <li><strong>Cut to the apical domain</strong>, roughly residues 189 to 383. Confirm the boundaries by eye in PyMOL rather than trusting the numbers, because a cut through the middle of a helix leaves a frayed, unphysical edge that the generator will happily design a binder against.</li>
-    <li><strong>Keep one chain.</strong> TfR1 is a dimer, but one apical domain is the whole design surface. The second copy doubles the cost of every prediction downstream and buys nothing.</li>
+    <li><strong>Cut to the apical domain</strong>, residues 190 to 382 as assigned by SCOP for 1CX8. Confirm the boundaries by eye in PyMOL rather than trusting the numbers, because a cut through the middle of a helix leaves a frayed, unphysical edge that the generator will happily design a binder against. Here the cut is clean: both termini sit in β-strand, those two strands pair with each other, and the ends land 5.3&nbsp;Å apart, because the apical domain is an insertion whose two ends emerge side by side.</li>
+    <li><strong>Keep one chain.</strong> TfR1 is a dimer, but one apical domain is the whole design surface — the two apical domains sit 47&nbsp;Å apart centre to centre, so a 65–90 residue binder on one cannot reach the other. The second copy doubles the cost of every prediction downstream and buys nothing. <em>But note the cost of the truncation:</em> fourteen apical residues (210, 211, 285, 290–294, 339, 340, 343, 348, 362, 371) contact the second copy in the intact dimer, and deleting it leaves that face exposed in the file. The generator will design against it, and those designs would be physically impossible. Treat that patch as off-limits and filter for it in stage 3.</li>
     <li><strong>Strip every heteroatom</strong> — waters, sugars, ions. Leftover sugar chains are a classic way to silently poison a run, because the generator will design against them and they will not be there in the real experiment.</li>
     <li><strong>Get the mouse sequence.</strong> Mouse TfR1 is <code>Q62351</code> in UniProt. Align it to human, take the span matching the apical domain you just carved out, and save it as FASTA. No experimental mouse structure is needed, because mouse is only used for filtering and the structure predictor builds its own model from sequence.</li>
     <li><strong>Write down the three conserved positions.</strong> These become the hotspot residues handed to the generator in stage 2.</li>
@@ -495,7 +495,7 @@ footer p { margin: 10px 0; }
   <div class="done">
     <span class="tag">Done when</span>
     <ul>
-      <li>A single-chain PDB of roughly 195 residues, opened and visually inspected, with no heteroatoms left in it.</li>
+      <li>A single-chain PDB of 193 residues, opened and visually inspected, with no heteroatoms left in it.</li>
       <li>A mouse apical sequence in FASTA, aligned and span-matched to the human one.</li>
       <li>Three hotspot residue numbers written down, in whatever format the generator expects.</li>
     </ul>
