@@ -387,8 +387,8 @@ footer p { margin: 10px 0; }
         <rect x="14" y="226" width="178" height="48" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"/>
         <text class="lbl-b svg-fg" x="28" y="246">4 · Cross-species gate</text>
         <text class="lbl-s svg-muted" x="28" y="263">Boltz-2 · hosted</text>
-        <text class="lbl-s svg-muted" x="214" y="246">Human and mouse share only 3 of 9 key</text>
-        <text class="lbl-s svg-muted" x="214" y="260">positions. Keep what grips those three.</text>
+        <text class="lbl-s svg-muted" x="214" y="246">Prioritize conserved surface patches;</text>
+        <text class="lbl-s svg-muted" x="214" y="260">test the whole interface in both species.</text>
         <line x1="103" y1="276" x2="103" y2="290" stroke="currentColor" stroke-width="1.3" marker-end="url(#p1)"/>
 
         <!-- 5 -->
@@ -430,7 +430,7 @@ footer p { margin: 10px 0; }
     <span class="tag">The biology behind it</span>
     <p>TfR1 is two identical copies of the same protein locked together, anchored in the cell membrane. The part sticking out into the bloodstream folds into three distinct chunks, and only one of them is ours to touch.</p>
     <p>The <strong>helical</strong> chunk sits at the bottom near the membrane, where it both holds the two copies together and provides the site where transferrin — the courier protein that carries iron through the blood — docks. Residues 619 to 670 form that site. <strong>Block it and iron delivery stops throughout the body, which causes anaemia.</strong></p>
-    <p>The <strong>apical</strong> chunk sits at the top, pointing away from the cell, with no natural partner of its own and nothing above it. It is accessible, it is unoccupied, and it is as far from the iron site as it is possible to get. Several viruses independently evolved to enter human cells through it, and the brain-delivery drugs that reached the clinic bind there too.</p>
+    <p>The <strong>apical</strong> domain is an accessible design target away from the main transferrin site, but it is not unoccupied: ferritin is a natural ligand, and glycans and receptor-domain contacts constrain access. Candidate binders must be checked against the full biological assembly.</p>
   </div>
 
   <figure>
@@ -486,10 +486,10 @@ footer p { margin: 10px 0; }
 
   <ol>
     <li><strong>Cut to the apical domain</strong>, residues 190 to 382 as assigned by SCOP for 1CX8. Confirm the boundaries by eye in PyMOL rather than trusting the numbers, because a cut through the middle of a helix leaves a frayed, unphysical edge that the generator will happily design a binder against. Here the cut is clean: both termini sit in β-strand, those two strands pair with each other, and the ends land 5.3&nbsp;Å apart, because the apical domain is an insertion whose two ends emerge side by side.</li>
-    <li><strong>Keep one chain.</strong> TfR1 is a dimer, but one apical domain is the whole design surface — the two apical domains sit 47&nbsp;Å apart centre to centre, so a 65–90 residue binder on one cannot reach the other. The second copy doubles the cost of every prediction downstream and buys nothing. <em>But note the cost of the truncation:</em> fourteen apical residues (210, 211, 285, 290–294, 339, 340, 343, 348, 362, 371) contact the second copy in the intact dimer, and deleting it leaves that face exposed in the file. The generator will design against it, and those designs would be physically impossible. Treat that patch as off-limits and filter for it in stage 3.</li>
-    <li><strong>Strip every heteroatom</strong> — waters, sugars, ions. Leftover sugar chains are a classic way to silently poison a run, because the generator will design against them and they will not be there in the real experiment.</li>
+    <li><strong>Use one apical chain for economical generation.</strong> Then check designs in the full receptor dimer. In 3S9L, biological assembly reconstruction identifies apical dimer contacts at 312–314, 316–320 and 322–324. The earlier fourteen-residue list used unrelated crystal copies and is superseded. Distance between domain centres does not rule out clashes by an extended binder.</li>
+    <li><strong>Prepare an ATOM-only generator input, but retain glycan context for screening.</strong> Removing sugars from the input does not remove them from the assay target. 11QC resolves glycans at N251 and N317 in the apical domain; task 6 flags their neighbourhoods.</li>
     <li><strong>Get the mouse sequence.</strong> Mouse TfR1 is <code>Q62351</code> in UniProt. Align it to human, take the span matching the apical domain you just carved out, and save it as FASTA. No experimental mouse structure is needed, because mouse is only used for filtering and the structure predictor builds its own model from sequence.</li>
-    <li><strong>Write down the three conserved positions.</strong> These become the hotspot residues handed to the generator in stage 2.</li>
+    <li><strong>Record provisional hotspot candidates.</strong> Task 6 prioritizes F237, K240 and K241, with mouse mapping and structural checks in <a href="task6-hotspot-analysis.md">the evidence report</a>. These are independently derived candidates, not experimentally proven hotspots or an identified list of the competition’s unnamed three.</li>
   </ol>
 
   <div class="done">
@@ -497,7 +497,7 @@ footer p { margin: 10px 0; }
     <ul>
       <li>A single-chain PDB of 193 residues, opened and visually inspected, with no heteroatoms left in it.</li>
       <li>A mouse apical sequence in FASTA, aligned and span-matched to the human one.</li>
-      <li>Three hotspot residue numbers written down, in whatever format the generator expects.</li>
+      <li>Candidate hotspot identities, chain IDs, human/mouse numbering and evidence saved in <code>data/target/hotspots.json</code>.</li>
     </ul>
   </div>
 </section>
@@ -510,7 +510,7 @@ footer p { margin: 10px 0; }
     <span class="pill nim">Hosted</span><span class="pill tool">BioNeMo toolkit</span><span class="pill tool">RFdiffusion</span><span class="pill tool">ProteinMPNN</span><span class="pill tool">Boltz-2</span>
   </div>
 
-  <p>Run NVIDIA's <code>protein-binder-design</code> workflow against the apical domain file, with the three hotspots specified. It chains three models: one invents a backbone shape aimed at the hotspots, one chooses an amino acid sequence that will fold into that shape, and one predicts the resulting complex so it can be scored.</p>
+  <p>Run NVIDIA's <code>protein-binder-design</code> workflow against the apical domain file, with one candidate patch specified. It chains three models: one invents a backbone shape aimed at the hotspots, one chooses an amino acid sequence that will fold into that shape, and one predicts the resulting complex so it can be scored.</p>
 
   <div class="bio">
     <span class="tag">The biology behind it</span>
@@ -563,14 +563,14 @@ footer p { margin: 10px 0; }
 
   <div class="bio">
     <span class="tag">The biology behind it</span>
-    <p>Of the nine key positions on the apical patch, <strong>human and mouse TfR1 have only three in common</strong>. The two surfaces genuinely do not look alike, which is also why certain human-infecting viruses cannot infect mice at all.</p>
-    <p>A binder that works in both species therefore has to take most of its grip from those three shared positions while tolerating the six that differ, either by avoiding them or by contacting them in a way that works with either residue. This is a real constraint on where on the patch we are allowed to bind, and it is why the plan generates far more designs than it needs.</p>
+    <p>The competition describes a locally divergent patch using a six-of-nine comparison, but does not enumerate a complete nine-position set. It is not a count of conserved sites across the domain. Our alignment gives 144 identical columns out of 194, with 48 substitutions and two gap columns. See <a href="task6-hotspot-analysis.md">task 6</a> for independently derived candidates.</p>
+    <p>Conserved anchors are a starting hypothesis. Cross-species binding also depends on neighbouring side chains, backbone geometry and glycan access. Evaluate the complete designed interface against both receptors rather than assuming that three shared contacts guarantee binding.</p>
   </div>
 
   <div class="done warn">
     <span class="tag">Expect heavy attrition</span>
     <ul>
-      <li>This stage removes <strong>half to three quarters</strong> of the pool. That is not a failure of the stage; it is the reason we over-generate.</li>
+      <li>Measure the rejection rate on a pilot batch; no project data yet support a numerical attrition estimate.</li>
       <li>A pool of 20 entering this gate leaves nothing to work with. A pool of several hundred leaves 50 to 100, which is what stage 5 needs.</li>
     </ul>
   </div>
@@ -588,10 +588,10 @@ footer p { margin: 10px 0; }
 
   <div class="bio">
     <span class="tag">The biology behind it — read this part twice</span>
-    <p>Moving from pH 7.4 to pH 6.0 means roughly 25 times more free protons in solution. Almost nothing in a protein notices. Every amino acid side chain that can hold a proton is in exactly the same state at both conditions, because their tipping points all sit far outside that window.</p>
-    <p>Except one. <strong>Histidine's tipping point sits at about pH 6.5, right between our two conditions.</strong> At pH 7.4 roughly 11 per cent of histidine copies carry a positive charge; at pH 6.0, roughly 76 per cent do. It is the only residue in the entire alphabet that flips.</p>
-    <p>And here is why that matters. Water molecules cluster around charges and stabilise them, so <strong>burying a charge where no water can reach it is energetically expensive.</strong> A histidine sitting in the middle of a contact surface is tolerable while neutral, and becomes very costly the moment it turns positive. The surface comes apart on its own.</p>
-    <p>That is the whole mechanism. A histidine in the right place is a protein that can tell whether it is inside a cell, because the acidity tells it, and that responds by letting go.</p>
+    <p>Moving from pH 7.4 to pH 6.0 means roughly 25 times more free protons. Whether that weakens binding depends on how protonation differs between the free binder and its bound complex.</p>
+    <p><strong>Histidine is the practical starting point because its usual pKa is near this range.</strong> For an illustrative pKa of 6.5, protonation rises from roughly 11% to 76%. Real pKa values depend on local environment, including burial, so these percentages are not predictions for a designed complex.</p>
+    <p>Protonating a buried histidine can disrupt a hydrogen bond or create electrostatic repulsion, but can also stabilize binding in a different environment. Burying histidine alone does not guarantee a switch; assess geometry and protonation in both bound and free states.</p>
+    <p>These are hypotheses for stage 5. Target hotspots guide attachment; histidine substitutions are selected on the designed binder after a complex exists.</p>
   </div>
 
   <figure>
@@ -635,7 +635,7 @@ footer p { margin: 10px 0; }
         <text class="lbl-s" x="493" y="168" text-anchor="middle" fill="var(--acid)" font-weight="700">charged — pushes apart</text>
       </svg>
     </div>
-    <figcaption><b>The switch in one picture.</b> A histidine next to an arginine is the strongest placement available, because arginine stays positive at both pH values — so protonation does not merely delete a favourable contact, it creates an actively repulsive one.</figcaption>
+    <figcaption><b>A possible switch mechanism.</b> Histidine near a positive side chain can produce repulsion after protonation, depending on geometry and pKa. This is a candidate mechanism, not a guaranteed release response.</figcaption>
   </figure>
 
   <h3>Three routes, in priority order</h3>
@@ -676,7 +676,7 @@ footer p { margin: 10px 0; }
   </ol>
 
   <div class="key">
-    <p><strong>Position beats count.</strong> One histidine in the core beside an arginine is a switch. Three at the rim are three wasted mutations. Rank candidate positions by what they sit next to, never by how many you can fit.</p>
+    <p><strong>Position matters more than count.</strong> Prioritize plausible hydrogen-bond and charge interactions, then test whether the variants retain neutral-pH binding and release at pH 6.0.</p>
   </div>
 
   <h4>Making the mutation</h4>

@@ -92,10 +92,32 @@ Routes B and C are alternatives to *stage 5 only*. Both take the same input stag
 |---|---|
 | [The TfR1 Problem](docs/tfr1-biological-doc.html) | The biology from zero. Assumes no background. Start here if you are new. |
 | [The TfR1 Pipeline](docs/tfr1-architecture.html) | The six stages in detail, with the biology behind each one. The working plan. |
-| [Stage 1 notes](docs/stage1-target-prep-notes.txt) | Target preparation, assembly correction, outputs and reproduction. |
+| [Stage 1: target prep](docs/target-prep.md) | What the target-prep scripts do, every output file, how to run them, and how to visualize the result. |
 | [Task 6: hotspot evidence](docs/task6-hotspot-analysis.md) | Research, provisional F237/K240/K241 patch, mouse mapping, limitations and generator handoff. |
 
 Open the HTML files in a browser — they carry diagrams, an interactive pH simulator and clickable glossary terms.
+
+## Visualize the receptor and hotspots
+
+Requires Python 3 and PyMOL. Run from the repository root:
+
+```sh
+# Prepare inputs if you have not already done so:
+python3 -I scripts/prep_target.py
+
+# Render five annotated views and open the interactive PyMOL session:
+python3 -I scripts/visualize_target.py --open
+```
+
+Five scenes, each captioned in the viewer: **01_overview** (the ectodomain dimer coloured by domain), **02_domains** (one chain, its three domains and the transferrin site at 619–670), **03_constraints** (the apical domain with the dimer seam, the glycans and everything else a binder must avoid), **04_target** (exactly what the generator receives), and **05_hotspots** (the candidate patches, best first). The patches are candidate attachment residues, not validated binding sites.
+
+Results are saved in **`data/visualization/`**: one PNG per scene and **`tfr1.pse`**, the interactive session, which also carries named selections for each domain, the transferrin site, the glycans and each patch. Omit `--open` to render without launching the window. Reopen an existing result with:
+
+```sh
+pymol data/visualization/tfr1.pse
+```
+
+If PyMOL is not on your PATH, pass `--pymol /path/to/pymol`. The [target-prep guide](docs/target-prep.md) explains each view, the colour scheme, controls, limitations and troubleshooting.
 
 ## Contributing
 
@@ -113,4 +135,4 @@ python3 -I -m unittest discover -s tests -v
 pymol data/target/hotspots.pml
 ```
 
-The generated `hotspots.json` preserves chain C and original human residue numbers for the existing target PDB. It also records crop-relative and mouse numbering. The old 21-residue avoid list was based on crystal packing; regenerated outputs use the biological assemblies.
+The generated `hotspots.json` preserves chain C and original human residue numbers for the existing target PDB. It also records crop-relative and mouse numbering. The old 21-residue avoid list was based on crystal packing; regenerated outputs use the biological assemblies. See [the target-prep guide](docs/target-prep.md) for the files, the filters and the caveats.
